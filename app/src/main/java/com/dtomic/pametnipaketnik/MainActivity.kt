@@ -76,7 +76,21 @@ fun extractZip(context: Context, zipFileName: String, destinationDir: File): Lis
 
     return extractedFiles
 }
-
+fun playAudio(context: Context, filePath: String) {
+    val mediaPlayer = MediaPlayer().apply {
+        try {
+            setDataSource(filePath)
+            prepare()
+            start()
+            Log.i("Playback", "Playing audio from: $filePath")
+        } catch (e: IOException) {
+            Log.e("Playback", "Error preparing or starting playback", e)
+        } finally {
+            // Optional: Release MediaPlayer after playback finishes
+            setOnCompletionListener { release() }
+        }
+    }
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -134,7 +148,7 @@ fun test() {
 
                 val request = Request.Builder()
                     .url("https://api-d4me-stage.direct4.me/sandbox/v1/Access/openbox")
-                    .addHeader("Authorization", "TOKEN GOES HERE")
+                    .addHeader("Authorization", "Bearer API KEY HERE")
                     .post(requestBody)
                     .build()
 
@@ -162,6 +176,11 @@ fun test() {
                         Log.e("FileSave", "Failed to save file")
                     }
 
+                    if (extractedFiles!!.contains("token.wav")) {
+                        playAudio(context, File(extractDir, "token.wav").absolutePath)
+                    } else {
+                        Log.e("ZIP", "No audio file found in ZIP archive")
+                    }
                 }
             } catch (e: Exception) {
                 Log.e("NetworkError", "Failed to make request", e)
