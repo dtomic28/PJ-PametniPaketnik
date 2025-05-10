@@ -70,6 +70,7 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.gson)
+    implementation (libs.zxing.android.embedded)
 
 
 
