@@ -1,4 +1,3 @@
-
 package com.dtomic.pametnipaketnik
 
 import android.os.Bundle
@@ -37,6 +36,46 @@ data class ApiResponse(
     val result: Int,
     val errorNumber: Number
 )
+fun saveBase64ToFile(context: Context, fileName: String, decodedBytes: ByteArray): Boolean {
+    return try {
+        val fos: FileOutputStream = context.openFileOutput(fileName, Context.MODE_PRIVATE)
+        fos.write(decodedBytes)
+        fos.close()
+        true
+    } catch (e: IOException) {
+        e.printStackTrace()
+        false
+    }
+}
+fun extractZip(context: Context, zipFileName: String, destinationDir: File): List<String> {
+    val extractedFiles = mutableListOf<String>()
+
+    val zipFile = File(context.filesDir, zipFileName)
+    val zis = ZipInputStream(zipFile.inputStream())
+
+    var entry = zis.nextEntry
+    while (entry != null) {
+        val entryName = entry.name
+        val outputFile = File(destinationDir, entryName)
+
+        if (entry.isDirectory) {
+            outputFile.mkdirs()
+        } else {
+            outputFile.parentFile?.mkdirs()
+            FileOutputStream(outputFile).use { fos ->
+                zis.copyTo(fos)
+            }
+        }
+
+        extractedFiles.add(entryName)
+        entry = zis.nextEntry
+    }
+
+    zis.closeEntry()
+    zis.close()
+
+    return extractedFiles
+}
 
 
 class MainActivity : ComponentActivity() {
@@ -95,7 +134,7 @@ fun test() {
 
                 val request = Request.Builder()
                     .url("https://api-d4me-stage.direct4.me/sandbox/v1/Access/openbox")
-                    .addHeader("Authorization", "Bearer API KEY GOES HERE ")
+                    .addHeader("Authorization", "TOKEN GOES HERE")
                     .post(requestBody)
                     .build()
 
@@ -107,6 +146,22 @@ fun test() {
                     val apiResponse = gson.fromJson(responseBody, ApiResponse::class.java)
 
                     val base64Data = apiResponse.data
+
+                    val decodedBytes = Base64.decode(base64Data, Base64.DEFAULT)
+                    val success = saveBase64ToFile(context, "token.zip", decodedBytes)
+
+                    if (success) {
+                        Log.i("FileSave", "Saved to: ${context.filesDir.absolutePath}/token.zip")
+                        extractDir = File(context.cacheDir, "extracted_audio")
+                        extractDir!!.mkdirs()
+
+                        extractedFiles = extractZip(context, "token.zip", extractDir!!)
+
+                        Log.i("ExtractedFiles", extractedFiles!!.joinToString())
+                    } else {
+                        Log.e("FileSave", "Failed to save file")
+                    }
+
                 }
             } catch (e: Exception) {
                 Log.e("NetworkError", "Failed to make request", e)
