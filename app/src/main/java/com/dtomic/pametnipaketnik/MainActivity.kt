@@ -174,14 +174,15 @@ fun TestWithBoxId(boxId: String) {
                     val base64Data = apiResponse.data
 
                     val decodedBytes = Base64.decode(base64Data, Base64.DEFAULT)
-                    val success = saveBase64ToFile(context, "token.zip", decodedBytes)
+
+                    val success = saveBase64ToFile(context, "test.zip", decodedBytes)
 
                     if (success) {
-                        Log.i("FileSave", "Saved to: ${context.filesDir.absolutePath}/token.zip")
+                        Log.i("FileSave", "Saved to: ${context.filesDir.absolutePath}/test.zip")
                         val extractDir = File(context.cacheDir, "extracted_audio")
                         extractDir.mkdirs()
 
-                        val extractedFiles = extractZip(context, "token.zip", extractDir)
+                        val extractedFiles = extractZip(context, "test.zip", extractDir)
 
                         Log.i("ExtractedFiles", extractedFiles.joinToString())
 
