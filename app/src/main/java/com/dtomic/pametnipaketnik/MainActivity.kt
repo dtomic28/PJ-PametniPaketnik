@@ -184,6 +184,7 @@ fun TestWithBoxId(boxId: String) {
 
                         val extractedFiles = extractZip(context, "test.zip", extractDir)
 
+
                         Log.i("ExtractedFiles", extractedFiles.joinToString())
 
                         if (extractedFiles.contains("token.wav")) {
