@@ -140,28 +140,13 @@ fun TestWithBoxId(boxId: String) {
                 status = "Connecting to server..."
                 val client = OkHttpClient()
 
-                val mediaType = "application/json".toMediaType()
-                val requestBody = """
-                    {
-                      "deliveryId": 12345,
-                      "boxId": $boxId,
-                      "tokenFormat": 4,
-                      "latitude": 46.056946,
-                      "longitude": 14.505751,
-                      "qrCodeInfo": null,
-                      "terminalSeed": 111222,
-                      "isMultibox": false,
-                      "doorIndex": 0,
-                      "addAccessLog": true
-                    }
-                """.trimIndent().toRequestBody(mediaType)
 
                 status = "Sending request..."
                 val request = Request.Builder()
-                    .url("https://api-d4me-stage.direct4.me/sandbox/v1/Access/openbox")
-                    .addHeader("Authorization", "Bearer 9ea96945-3a37-4638-a5d4-22e89fbc998f")
-                    .post(requestBody)
+                    .url("http://192.168.1.8:3001/api/token/requestToken/${boxId}")
                     .build()
+
+                Log.d("API_CALL", "Request URL: ${request.url}")
 
                 val response = client.newCall(request).execute()
                 val responseBody = response.body?.string()
