@@ -19,14 +19,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.dtomic.pametnipaketnik.ui.theme.PametniPaketnikTheme
+import com.dtomic.pametnipaketnik.utils.HttpClientWrapper
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -138,58 +135,48 @@ fun TestWithBoxId(boxId: String) {
         withContext(Dispatchers.IO) {
             try {
                 status = "Connecting to server..."
-                val client = OkHttpClient()
+                val http = HttpClientWrapper()
 
+                http.get("token/requestToken/$boxId") { success, responseBody ->
+                    if (success && responseBody != null) {
+                        try {
+                            status = "Processing response..."
+                            val gson = com.google.gson.Gson()
+                            val apiResponse = gson.fromJson(responseBody, ApiResponse::class.java)
 
-                status = "Sending request..."
-                val request = Request.Builder()
-                    .url("http://192.168.1.8:3001/api/token/requestToken/${boxId}")
-                    .build()
+                            val base64Data = apiResponse.data
+                            val decodedBytes = Base64.decode(base64Data, Base64.DEFAULT)
 
-                Log.d("API_CALL", "Request URL: ${request.url}")
+                            val successSaving = saveBase64ToFile(context, "test.zip", decodedBytes)
 
-                val response = client.newCall(request).execute()
-                val responseBody = response.body?.string()
+                            if (successSaving) {
+                                val extractDir = File(context.cacheDir, "extracted_audio")
+                                extractDir.mkdirs()
 
-                if (response.isSuccessful) {
-                    status = "Processing response..."
-                    val gson = com.google.gson.Gson()
-                    val apiResponse = gson.fromJson(responseBody, ApiResponse::class.java)
+                                val extractedFiles = extractZip(context, "test.zip", extractDir)
+                                Log.i("ExtractedFiles", extractedFiles.joinToString())
 
-                    val base64Data = apiResponse.data
-
-                    val decodedBytes = Base64.decode(base64Data, Base64.DEFAULT)
-
-                    val success = saveBase64ToFile(context, "test.zip", decodedBytes)
-
-                    if (success) {
-                        Log.i("FileSave", "Saved to: ${context.filesDir.absolutePath}/test.zip")
-                        val extractDir = File(context.cacheDir, "extracted_audio")
-                        extractDir.mkdirs()
-
-                        val extractedFiles = extractZip(context, "test.zip", extractDir)
-
-
-                        Log.i("ExtractedFiles", extractedFiles.joinToString())
-
-                        if (extractedFiles.contains("token.wav")) {
-                            status = "Playing audio..."
-                            playAudio(context, File(extractDir, "token.wav").absolutePath)
-                            status = "Success! Audio played"
-                        } else {
-                            status = "Error: No audio file found"
-                            Log.e("ZIP", "No audio file found in ZIP archive")
+                                if (extractedFiles.contains("token.wav")) {
+                                    status = "Playing audio..."
+                                    playAudio(context, File(extractDir, "token.wav").absolutePath)
+                                    status = "Success! Audio played"
+                                } else {
+                                    status = "Error: No audio file found"
+                                }
+                            } else {
+                                status = "Error: Failed to save ZIP"
+                            }
+                        } catch (e: Exception) {
+                            status = "Error parsing or handling response: ${e.localizedMessage}"
+                            Log.e("ResponseError", e.message ?: "Unknown error", e)
                         }
                     } else {
-                        status = "Error: Failed to save file"
-                        Log.e("FileSave", "Failed to save file")
+                        status = "Error: $responseBody"
                     }
-                } else {
-                    status = "Error: ${response.code} - ${response.message}"
                 }
             } catch (e: Exception) {
                 status = "Error: ${e.localizedMessage}"
-                Log.e("NetworkError", "Failed to make request", e)
+                Log.e("RequestError", "Exception in HTTP request", e)
             }
         }
     }
@@ -200,6 +187,7 @@ fun TestWithBoxId(boxId: String) {
         modifier = Modifier.padding(vertical = 8.dp)
     )
 }
+
 
 data class ApiResponse(
     val data: String,
