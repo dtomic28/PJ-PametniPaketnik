@@ -1,6 +1,8 @@
 package com.dtomic.pametnipaketnik.utils
 
 import android.util.Log
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.layout
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -60,5 +62,21 @@ fun playAudio(context: android.content.Context, filePath: String) {
         } finally {
             setOnCompletionListener { release() }
         }
+    }
+}
+
+fun Modifier.percentWidth(percent: Float) = layout { measurable, constraints ->
+    val width = (constraints.maxWidth * percent).toInt()
+    val placeable = measurable.measure(constraints.copy(minWidth = width, maxWidth = width))
+    layout(width, placeable.height) {
+        placeable.placeRelative(0, 0)
+    }
+}
+
+fun Modifier.percentHeight(percent: Float) = layout { measurable, constraints ->
+    val height = (constraints.maxHeight * percent).toInt()
+    val placeable = measurable.measure(constraints.copy(minHeight = height, maxHeight = height))
+    layout(placeable.width, height) {
+        placeable.placeRelative(0, 0)
     }
 }
