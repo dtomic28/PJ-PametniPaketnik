@@ -1,9 +1,9 @@
-package com.dtomic.pametnipaketnik.composable
+package com.dtomic.pametnipaketnik.composable.parts
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -15,14 +15,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.dtomic.pametnipaketnik.ui.theme.AppTheme
-import com.dtomic.pametnipaketnik.utils.percentWidth
 
 @Composable
-fun CustomButton(
+fun Custom_Button(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -58,39 +56,39 @@ fun CustomButton(
 
 @Preview(showBackground = true)
 @Composable
-fun CustomButtonPreview() {
+private fun CustomButtonPreview() {
     AppTheme {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            CustomButton(
+            Custom_Button(
                 modifier = Modifier
-                    .percentWidth(0.9f),
+                    .fillMaxWidth(0.9f),
                 text = "Primary Button",
                 onClick = {}
             )
 
-            CustomButton(
+            Custom_Button(
                 modifier = Modifier
-                    .percentWidth(0.9f),
+                    .fillMaxWidth(0.9f),
                 text = "Disabled Button",
                 onClick = {},
                 enabled = false
             )
 
-            CustomButton(
+            Custom_Button(
                 modifier = Modifier
-                    .percentWidth(0.9f),
+                    .fillMaxWidth(0.9f),
                 text = "Secondary Button",
                 onClick = {},
                 backgroundColor = MaterialTheme.colorScheme.secondary,
                 contentColor = MaterialTheme.colorScheme.onSecondary
             )
 
-            CustomButton(
+            Custom_Button(
                 modifier = Modifier
-                    .percentWidth(0.9f),
+                    .fillMaxWidth(0.9f),
                 text = "Tertiary Button",
                 onClick = {},
                 backgroundColor = MaterialTheme.colorScheme.tertiary,

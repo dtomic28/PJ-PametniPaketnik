@@ -1,5 +1,6 @@
 package com.dtomic.pametnipaketnik.utils
 
+import android.R.attr.text
 import android.util.Log
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
@@ -65,18 +66,23 @@ fun playAudio(context: android.content.Context, filePath: String) {
     }
 }
 
-fun Modifier.percentWidth(percent: Float) = layout { measurable, constraints ->
-    val width = (constraints.maxWidth * percent).toInt()
-    val placeable = measurable.measure(constraints.copy(minWidth = width, maxWidth = width))
-    layout(width, placeable.height) {
-        placeable.placeRelative(0, 0)
-    }
-}
+fun registerUser(
+    username: String,
+    email: String,
+    password: String,
+    repeatPassword: String
+): String {
+    val emailRegex = Regex("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")
 
-fun Modifier.percentHeight(percent: Float) = layout { measurable, constraints ->
-    val height = (constraints.maxHeight * percent).toInt()
-    val placeable = measurable.measure(constraints.copy(minHeight = height, maxHeight = height))
-    layout(placeable.width, height) {
-        placeable.placeRelative(0, 0)
+    return if (password != repeatPassword) {
+        "Passwords don't match!"
+    } else if (username == "Tilen") { //TODO IMPLEMENT LATER
+        "Username has already been taken!"
+    } else if (!emailRegex.containsMatchIn(email)) {
+        "Not a valid email!"
+    }
+    else {
+        //TODO REGISTER USER
+        ""
     }
 }

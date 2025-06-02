@@ -72,4 +72,5 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.gson)
     implementation (libs.zxing.android.embedded)
+    implementation(libs.androidx.navigation.compose)
 }
