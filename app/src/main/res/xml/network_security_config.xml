@@ -4,5 +4,7 @@
         <domain includeSubdomains="true">192.168.1.8</domain>
         <domain includeSubdomains="true">pp.dtomic.com</domain>
         <domain includeSubdomains="true">192.168.64.147</domain>
+        <domain includeSubdomains="true">164.8.161.123</domain>
+        <domain includeSubdomains="true">192.168.1.213</domain>
     </domain-config>
 </network-security-config>

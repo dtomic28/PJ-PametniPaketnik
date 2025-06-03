@@ -1,4 +1,4 @@
-package com.dtomic.pametnipaketnik.composable
+package com.dtomic.pametnipaketnik.composable.pages
 
 import android.Manifest
 import android.content.pm.PackageManager

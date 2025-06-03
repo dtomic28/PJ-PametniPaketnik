@@ -1,3 +1,19 @@
 <resources>
     <string name="app_name">PametniPaketnik</string>
+
+    <string name="btn_next">Next</string>
+    <string name="btn_back">Back</string>
+    <string name="btn_login">Login</string>
+    <string name="btn_register">Register</string>
+    <string name="btn_items">Items</string>
+    <string name="btn_activeTransactions">Active</string>
+    <string name="btn_sell">Sell</string>
+
+    <string name="err_generic">An Error has occurred.</string>
+    <string name="err_missingImage">Image does not exist.</string>
+
+    <string name="txt_username">Enter your username</string>
+    <string name="txt_email">Enter your email</string>
+    <string name="txt_password">Enter your password</string>
+    <string name="txt_repeatPassword">Repeat your password</string>
 </resources>
