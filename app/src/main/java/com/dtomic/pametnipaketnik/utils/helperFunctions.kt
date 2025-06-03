@@ -7,6 +7,7 @@ import androidx.compose.ui.layout.layout
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.security.MessageDigest
 import java.util.zip.ZipInputStream
 
 fun saveBase64ToFile(context: android.content.Context, fileName: String, decodedBytes: ByteArray): Boolean {
@@ -66,23 +67,12 @@ fun playAudio(context: android.content.Context, filePath: String) {
     }
 }
 
-fun registerUser(
-    username: String,
-    email: String,
-    password: String,
-    repeatPassword: String
-): String {
-    val emailRegex = Regex("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")
-
-    return if (password != repeatPassword) {
-        "Passwords don't match!"
-    } else if (username == "Tilen") { //TODO IMPLEMENT LATER
-        "Username has already been taken!"
-    } else if (!emailRegex.containsMatchIn(email)) {
-        "Not a valid email!"
-    }
-    else {
-        //TODO REGISTER USER
-        ""
+fun hashPassword(password: String): String {
+    return try {
+        val digest = MessageDigest.getInstance("SHA-256")
+        val hashBytes = digest.digest(password.toByteArray(Charsets.UTF_8))
+        hashBytes.fold("") { str, it -> str + "%02x".format(it) }
+    } catch (e: Exception) {
+        throw Exception("Failed to hash password")
     }
 }

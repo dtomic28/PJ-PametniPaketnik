@@ -4,6 +4,7 @@ import android.R.attr.password
 import android.util.Base64
 import android.util.Log
 import android.util.Log.e
+import android.util.Log.i
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,17 +41,15 @@ import com.dtomic.pametnipaketnik.composable.parts.Custom_ErrorBox
 import com.dtomic.pametnipaketnik.composable.parts.Custom_Logo
 import com.dtomic.pametnipaketnik.composable.parts.Custom_TextField
 import com.dtomic.pametnipaketnik.ui.theme.AppTheme
-import com.dtomic.pametnipaketnik.utils.ApiResponse
 import com.dtomic.pametnipaketnik.utils.HttpClientWrapper
-import com.dtomic.pametnipaketnik.utils.extractZip
-import com.dtomic.pametnipaketnik.utils.playAudio
-import com.dtomic.pametnipaketnik.utils.registerUser
-import com.dtomic.pametnipaketnik.utils.saveBase64ToFile
+import com.dtomic.pametnipaketnik.utils.hashPassword
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.json.JSONArray
+import org.json.JSONObject
 import java.io.File
+import java.nio.file.Files.exists
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -65,18 +65,23 @@ class RegisterViewModel : ViewModel() {
     private val _errorMessage = MutableStateFlow("")
     val errorMessage: StateFlow<String> = _errorMessage
 
+    private val _moveTo2FA = MutableStateFlow(false)
+    val moveTo2FA: StateFlow<Boolean> = _moveTo2FA
+
     private val http = HttpClientWrapper()
 
-    private suspend fun getUsernames(): List<String> = suspendCoroutine { cont ->
-        http.get("user/getAllUsernames") { success, responseBody ->
+    private suspend fun usernameExists(username: String): Boolean = suspendCoroutine { cont ->
+        http.get("user/usernameExists/${username}") { success, responseBody ->
             if (success && responseBody != null) {
                 try {
-                    val usernames = JSONArray(responseBody)
-                    val result = mutableListOf<String>()
-                    for (i in 0 until usernames.length()) {
-                        result.add(usernames.getString(i))
+                    val validity = JSONObject(responseBody)
+                    val exists = validity.getString("exists")
+                    if (exists == "true") {
+                        cont.resume(true)
                     }
-                    cont.resume(result)
+                    else {
+                        cont.resume(false)
+                    }
                 } catch (e: Exception) {
                     cont.resumeWithException(e)
                 }
@@ -85,23 +90,38 @@ class RegisterViewModel : ViewModel() {
             }
         }
     }
+    private suspend fun sendRegistration(username: String, email: String, password: String): Boolean = suspendCoroutine { cont ->
 
+        val jsonBody = JSONObject().apply {
+            put("username", username)
+            put("email", email)
+            put("password", hashPassword(password)) // Make sure to hash the password!
+        }.toString()
+
+        http.postJson("user/register", jsonBody) { success, responseBody ->
+            if (success && responseBody != null) {
+                cont.resume(true)
+                _moveTo2FA.value = true
+            } else {
+                cont.resumeWithException(Exception("HTTP error: $responseBody"))
+            }
+        }
+    }
     fun registerUser() {
         viewModelScope.launch {
-            val emailRegex = Regex("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")
+            val emailRegex = Regex("^[\\w-.]+@([\\w-]+\\.)+[\\w-]{2,4}$")
 
-            val allUsernames = mutableListOf<String>()
             try {
-                val allUsernames = getUsernames()
-                
-                Log.d("TILEN", allUsernames.contains(username.value).toString())
+                val usernameExists = usernameExists(username.value)
+
                 if (password.value != repeatPassword.value) {
                     _errorMessage.value = "Passwords don't match!"
-                } else if (allUsernames.contains(username.value)) {
+                } else if (usernameExists) {
                     _errorMessage.value = "Username has already been taken!"
                 } else if (!emailRegex.containsMatchIn(email.value)) {
                     _errorMessage.value = "Not a valid email!"
                 } else {
+                    sendRegistration(username.value, email.value, password.value)
                     _errorMessage.value = ""
                 }
             }
@@ -111,6 +131,9 @@ class RegisterViewModel : ViewModel() {
         }
 
     }
+    fun resetNavigation() {
+        _moveTo2FA.value = false
+    }
 }
 
 // VIEW
@@ -118,6 +141,17 @@ class RegisterViewModel : ViewModel() {
 fun Page_Register(navController: NavController, viewModel: RegisterViewModel = viewModel()) {
     val errorMessage by viewModel.errorMessage.collectAsState()
     val error = errorMessage.isNotEmpty()
+
+    val navTrigger by viewModel.moveTo2FA.collectAsState()
+
+    LaunchedEffect(navTrigger) {
+        if (navTrigger) {
+            navController.navigate("RegisterPage2FA/${viewModel.username.value}")
+            // Optionally reset the trigger to prevent repeated navigation
+            viewModel.resetNavigation()
+        }
+    }
+
 
     Box( // whole screen
         modifier = Modifier

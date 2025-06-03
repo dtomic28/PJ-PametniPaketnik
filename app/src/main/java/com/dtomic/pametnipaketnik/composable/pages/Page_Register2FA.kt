@@ -1,8 +1,11 @@
 package com.dtomic.pametnipaketnik.composable.pages
 
+import Custom_CameraPreview
 import android.R.attr.password
+import android.util.Base64
 import android.util.Log
 import android.util.Log.e
+import android.util.Log.i
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,10 +18,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -35,6 +40,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.dtomic.pametnipaketnik.R
 import com.dtomic.pametnipaketnik.composable.parts.Custom_Button
+import com.dtomic.pametnipaketnik.composable.parts.Custom_CameraButton
 import com.dtomic.pametnipaketnik.composable.parts.Custom_ErrorBox
 import com.dtomic.pametnipaketnik.composable.parts.Custom_Logo
 import com.dtomic.pametnipaketnik.composable.parts.Custom_TextField
@@ -44,70 +50,62 @@ import com.dtomic.pametnipaketnik.utils.hashPassword
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
+import java.nio.file.Files.exists
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
 // MODEL
-class LoginViewModel : ViewModel() {
+class Register2FAViewModel : ViewModel() {
 
     val username = mutableStateOf("")
-    val password = mutableStateOf("")
 
-    private val _errorMessage = MutableStateFlow("")
+    private val _numOfBatches = MutableStateFlow(0)
+    val numOfBatches: StateFlow<Int> = _numOfBatches
+
+    private val _moveToMainMenu = MutableStateFlow(false)
+    val moveToMainMenu: StateFlow<Boolean> = _moveToMainMenu
+
+    private val _errorMessage = MutableStateFlow("Press the + button and move your head for 2 seconds while looking at the camera. Repeat 10 times!")
     val errorMessage: StateFlow<String> = _errorMessage
-
-    private val _moveTo2FA = MutableStateFlow(false)
-    val moveTo2FA: StateFlow<Boolean> = _moveTo2FA
 
     private val http = HttpClientWrapper()
 
-    private suspend fun sendLogin(username: String, password: String) : Boolean = suspendCoroutine { cont ->
-        val jsonBody = JSONObject().apply {
-            put("username", username)
-            put("password", hashPassword(password))
-        }.toString()
-
-        http.postJson("user/login", jsonBody) { success, responseBody ->
-            if (success && responseBody != null) {
-                cont.resume(true)
-            } else {
-                cont.resumeWithException(Exception("HTTP error: $responseBody"))
-            }
-        }
-    }
-
-    fun loginUser() {
-        viewModelScope.launch {
-            try {
-                if (sendLogin(username.value, password.value)) {
-                    _moveTo2FA.value = true
-                }
-            }
-            catch (e: Exception) {
-                _errorMessage.value = "Error while trying to log in."
-                Log.d("TILEN", e.message ?: "Error while trying to log in.")
-            }
+    fun takePictureBatch() {
+        _numOfBatches.value++
+        /*
+        TODO Tomic:
+            vsakic ku prides sm not zajem 10 slik v spannu 2 sekund (5 fps)
+            pa jih posl n backend z treniranje modela. username uporabnika
+            mas shranjen pod "username". ta funkcija se izvede usakic ku
+            uporabnik prtisne "+" button (5x)
+         */
+        if (numOfBatches.value > 4) {
+            _moveToMainMenu.value = true
         }
     }
     fun resetNavigation() {
-        _moveTo2FA.value = false
+        _moveToMainMenu.value = false
     }
 }
 
-//VIEW
+// VIEW
 @Composable
-fun Page_Login(navController: NavController, viewModel: LoginViewModel = viewModel()) {
+fun Page_Register2FA(navController: NavController, viewModel: Register2FAViewModel = viewModel(), username: String) {
+    viewModel.username.value = username
+
+    val numOfBatches by viewModel.numOfBatches.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val error = errorMessage.isNotEmpty()
 
-    val navTrigger by viewModel.moveTo2FA.collectAsState()
+    val navTrigger by viewModel.moveToMainMenu.collectAsState()
 
     LaunchedEffect(navTrigger) {
         if (navTrigger) {
-            navController.navigate("LoginPage2FA/${viewModel.username.value}")
-            // Optionally reset the trigger to prevent repeated navigation
+            navController.navigate("MainMenuPage")
             viewModel.resetNavigation()
         }
     }
@@ -131,58 +129,19 @@ fun Page_Login(navController: NavController, viewModel: LoginViewModel = viewMod
                 if (error) Custom_ErrorBox(errorMessage)
             }
             Surface(
-                // island
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
                     .weight(0.6f),
                 shadowElevation = 6.dp,
-
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.primaryContainer,
             ) {
-                Column( // logo/buttons devision
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.SpaceBetween,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Box( // logo box
-                        modifier = Modifier
-                            .weight(0.4f)
-                            .fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Custom_Logo(
-                            size = 100.dp
-                        )
-                    }
-
-                    Column( // buttons column
-                        modifier = Modifier
-                            .weight(0.6f)
-                            .fillMaxWidth(),
-                        verticalArrangement = Arrangement.Top,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Custom_TextField(
-                            value = viewModel.username.value,
-                            onValueChange = { viewModel.username.value = it },
-                            placeholderText = stringResource(R.string.txt_username),
-                            keyboardType = KeyboardType.Text
-                        )
-                        Spacer(
-                            modifier = Modifier
-                                .height(10.dp)
-                        )
-                        Custom_TextField(
-                            value = viewModel.password.value,
-                            onValueChange = { viewModel.password.value = it },
-                            placeholderText = stringResource(R.string.txt_password),
-                            keyboardType = KeyboardType.Password
-                        )
-                    }
-                }
+                /*
+                TODO tomic:
+                    camera preview v tem okvirju
+                */
             }
-            Row(
+            Row( // Buttons
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
                     .weight(0.2f),
@@ -192,7 +151,7 @@ fun Page_Login(navController: NavController, viewModel: LoginViewModel = viewMod
                 Custom_Button( // back
                     modifier = Modifier
                         .height(60.dp)
-                        .weight(0.45f),
+                        .weight(0.5f),
                     text = stringResource(R.string.btn_back),
                     onClick = {navController.popBackStack()},
                     backgroundColor = MaterialTheme.colorScheme.secondary,
@@ -202,15 +161,37 @@ fun Page_Login(navController: NavController, viewModel: LoginViewModel = viewMod
                     modifier = Modifier
                         .weight(0.1f)
                 )
-                Custom_Button( // Next
+                Surface(
                     modifier = Modifier
                         .height(60.dp)
-                        .weight(0.45f),
-                    text = stringResource(R.string.btn_next),
-                    onClick = { viewModel.loginUser() },
+                        .weight(0.20f),
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text="${numOfBatches}/5",
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+
+                }
+                Spacer(
+                    modifier = Modifier
+                        .weight(0.1f)
+                )
+                Custom_CameraButton(
+                    modifier = Modifier
+                        .height(60.dp)
+                        .weight(0.20f),
+                    onClick = { viewModel.takePictureBatch() }
                 )
             }
-
         }
     }
 }
@@ -220,6 +201,6 @@ fun Page_Login(navController: NavController, viewModel: LoginViewModel = viewMod
 private fun Preview() {
     val navController = rememberNavController()
     AppTheme {
-        Page_Login(navController)
+        Page_Register2FA(navController, username = "Tilen")
     }
 }

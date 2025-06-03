@@ -1,18 +1,26 @@
 package com.dtomic.pametnipaketnik.composable.pages
 
-import android.R.attr.password
 import android.util.Log
-import android.util.Log.e
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -20,10 +28,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -49,68 +56,17 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
-// MODEL
-class LoginViewModel : ViewModel() {
-
-    val username = mutableStateOf("")
-    val password = mutableStateOf("")
-
+class MainMenuViewModel : ViewModel() {
     private val _errorMessage = MutableStateFlow("")
     val errorMessage: StateFlow<String> = _errorMessage
 
-    private val _moveTo2FA = MutableStateFlow(false)
-    val moveTo2FA: StateFlow<Boolean> = _moveTo2FA
-
     private val http = HttpClientWrapper()
-
-    private suspend fun sendLogin(username: String, password: String) : Boolean = suspendCoroutine { cont ->
-        val jsonBody = JSONObject().apply {
-            put("username", username)
-            put("password", hashPassword(password))
-        }.toString()
-
-        http.postJson("user/login", jsonBody) { success, responseBody ->
-            if (success && responseBody != null) {
-                cont.resume(true)
-            } else {
-                cont.resumeWithException(Exception("HTTP error: $responseBody"))
-            }
-        }
-    }
-
-    fun loginUser() {
-        viewModelScope.launch {
-            try {
-                if (sendLogin(username.value, password.value)) {
-                    _moveTo2FA.value = true
-                }
-            }
-            catch (e: Exception) {
-                _errorMessage.value = "Error while trying to log in."
-                Log.d("TILEN", e.message ?: "Error while trying to log in.")
-            }
-        }
-    }
-    fun resetNavigation() {
-        _moveTo2FA.value = false
-    }
 }
 
-//VIEW
 @Composable
-fun Page_Login(navController: NavController, viewModel: LoginViewModel = viewModel()) {
+fun Page_MainMenu(navController: NavController, viewModel: MainMenuViewModel = viewModel()) {
     val errorMessage by viewModel.errorMessage.collectAsState()
     val error = errorMessage.isNotEmpty()
-
-    val navTrigger by viewModel.moveTo2FA.collectAsState()
-
-    LaunchedEffect(navTrigger) {
-        if (navTrigger) {
-            navController.navigate("LoginPage2FA/${viewModel.username.value}")
-            // Optionally reset the trigger to prevent repeated navigation
-            viewModel.resetNavigation()
-        }
-    }
 
     Box( // whole screen
         modifier = Modifier
@@ -123,15 +79,64 @@ fun Page_Login(navController: NavController, viewModel: LoginViewModel = viewMod
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ){
-            Box(
+            Row( //burger and profile
                 modifier = Modifier
-                    .weight(0.2f),
+                    .weight(0.1f)
+                    .fillMaxHeight()
+                    .fillMaxWidth(0.9f)
+                    .padding(10.dp)
+            ) {
+                Box( // Burger menu
+                    modifier = Modifier
+                        .weight(0.5f)
+                        .fillMaxSize(),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    IconButton(
+                        onClick = { /* Handle click */ },
+                        modifier = Modifier
+                            .background(Color.Transparent)
+                            .fillMaxHeight()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Menu,
+                            contentDescription = "Menu",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .fillMaxSize()
+                        )
+                    }
+                }
+                Box( //Profile
+                    modifier = Modifier
+                        .weight(0.5f)
+                        .fillMaxSize(),
+                    contentAlignment = Alignment.CenterEnd
+                ) {
+                    IconButton(
+                        onClick = { /* Handle click */ },
+                        modifier = Modifier
+                            .background(Color.Transparent)
+                            .fillMaxHeight()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.AccountCircle,
+                            contentDescription = "Profile",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .fillMaxSize()
+                        )
+                    }
+                }
+            }
+            Box( // error box
+                modifier = Modifier
+                    .weight(0.1f),
                 contentAlignment = Alignment.Center
             ) {
                 if (error) Custom_ErrorBox(errorMessage)
             }
-            Surface(
-                // island
+            Surface( // island
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
                     .weight(0.6f),
@@ -140,47 +145,7 @@ fun Page_Login(navController: NavController, viewModel: LoginViewModel = viewMod
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.primaryContainer,
             ) {
-                Column( // logo/buttons devision
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.SpaceBetween,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Box( // logo box
-                        modifier = Modifier
-                            .weight(0.4f)
-                            .fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Custom_Logo(
-                            size = 100.dp
-                        )
-                    }
 
-                    Column( // buttons column
-                        modifier = Modifier
-                            .weight(0.6f)
-                            .fillMaxWidth(),
-                        verticalArrangement = Arrangement.Top,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Custom_TextField(
-                            value = viewModel.username.value,
-                            onValueChange = { viewModel.username.value = it },
-                            placeholderText = stringResource(R.string.txt_username),
-                            keyboardType = KeyboardType.Text
-                        )
-                        Spacer(
-                            modifier = Modifier
-                                .height(10.dp)
-                        )
-                        Custom_TextField(
-                            value = viewModel.password.value,
-                            onValueChange = { viewModel.password.value = it },
-                            placeholderText = stringResource(R.string.txt_password),
-                            keyboardType = KeyboardType.Password
-                        )
-                    }
-                }
             }
             Row(
                 modifier = Modifier
@@ -193,8 +158,8 @@ fun Page_Login(navController: NavController, viewModel: LoginViewModel = viewMod
                     modifier = Modifier
                         .height(60.dp)
                         .weight(0.45f),
-                    text = stringResource(R.string.btn_back),
-                    onClick = {navController.popBackStack()},
+                    text = stringResource(R.string.btn_activeTransactions),
+                    onClick = { },
                     backgroundColor = MaterialTheme.colorScheme.secondary,
                     contentColor = MaterialTheme.colorScheme.onSecondary
                 )
@@ -206,11 +171,10 @@ fun Page_Login(navController: NavController, viewModel: LoginViewModel = viewMod
                     modifier = Modifier
                         .height(60.dp)
                         .weight(0.45f),
-                    text = stringResource(R.string.btn_next),
-                    onClick = { viewModel.loginUser() },
+                    text = stringResource(R.string.btn_sell),
+                    onClick = { },
                 )
             }
-
         }
     }
 }
@@ -220,6 +184,6 @@ fun Page_Login(navController: NavController, viewModel: LoginViewModel = viewMod
 private fun Preview() {
     val navController = rememberNavController()
     AppTheme {
-        Page_Login(navController)
+        Page_MainMenu(navController)
     }
 }

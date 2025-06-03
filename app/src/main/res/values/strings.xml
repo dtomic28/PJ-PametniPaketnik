@@ -5,6 +5,9 @@
     <string name="btn_back">Back</string>
     <string name="btn_login">Login</string>
     <string name="btn_register">Register</string>
+    <string name="btn_items">Items</string>
+    <string name="btn_activeTransactions">Active</string>
+    <string name="btn_sell">Sell</string>
 
     <string name="err_generic">An Error has occurred.</string>
     <string name="err_missingImage">Image does not exist.</string>
