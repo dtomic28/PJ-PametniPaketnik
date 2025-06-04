@@ -66,17 +66,33 @@ class LoginViewModel : ViewModel() {
     private suspend fun sendLogin(username: String, password: String) : Boolean = suspendCoroutine { cont ->
         val jsonBody = JSONObject().apply {
             put("username", username)
-            put("password", hashPassword(password))
+            put("password", password)
         }.toString()
 
         http.postJson("user/login", jsonBody) { success, responseBody ->
             Log.d("TILEN", "success: $success,\nresponse: $responseBody")
             if (success && responseBody != null) {
-                cont.resume(true)
+                try {
+                    val json = JSONObject(responseBody)
+                    if (json.has("token")) {
+                        val token = json.getString("token")
+                        HttpClientWrapper().setBearerToken(token) // Or your shared instance
+                        Log.i("Page_Login", "Login success, token set")
+                        cont.resume(true)
+                    } else {
+                        Log.e("Page_Login", "Token missing in response: $responseBody")
+                        cont.resumeWithException(Exception("Token missing in response"))
+                    }
+                } catch (e: Exception) {
+                    Log.e("Page_Login", "JSON parsing error: ${e.message}")
+                    cont.resumeWithException(e)
+                }
             } else {
+                Log.e("Page_Login", "Login fail $responseBody")
                 cont.resumeWithException(Exception("HTTP error: $responseBody"))
             }
         }
+
     }
 
     fun loginUser() {
