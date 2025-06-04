@@ -9,7 +9,7 @@ import java.io.IOException
 class HttpClientWrapper {
 
     //private val baseUrl = "https://pp.dtomic.com/api/"
-    private val baseUrl = "http://192.168.1.213:3001/api/"
+    private val baseUrl = "http://192.168.1.45:3001/api/"
     private val client = OkHttpClient()
     private var bearerToken: String? = null
 

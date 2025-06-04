@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -36,15 +37,15 @@ fun Custom_ItemCardRow(item: MainMenuViewModel.MenuItem, onClick: () -> Unit) {
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            /*AsyncImage(
+                model = item.imageLink,
+                contentDescription = null,
+                modifier = Modifier.size(120.dp)
+            )*/
             Text(
                 text = item.name,
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.weight(1f)
-            )
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = "Go to detail",
-                tint = MaterialTheme.colorScheme.primary
             )
         }
     }

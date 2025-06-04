@@ -57,7 +57,8 @@ class MainMenuViewModel : ViewModel() {
         val id: String,
         val name: String,
         val description: String,
-        val price: Int
+        val price: Int,
+        val imageLink: String
     )
 
     private val _errorMessage = MutableStateFlow("")
@@ -91,7 +92,8 @@ class MainMenuViewModel : ViewModel() {
                             id = jsonItem.getString("_id"),
                             name = jsonItem.getString("name"),
                             description = jsonItem.getString("description"),
-                            price = jsonItem.getInt("price")
+                            price = jsonItem.getInt("price"),
+                            imageLink = jsonItem.getString("imageLink")
                         )
                         resultList.add(item)
                     }
