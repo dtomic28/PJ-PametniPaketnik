@@ -93,7 +93,7 @@ class MainMenuViewModel : ViewModel() {
                             name = jsonItem.getString("name"),
                             description = jsonItem.getString("description"),
                             price = jsonItem.getInt("price"),
-                            imageLink = jsonItem.getString("imageLink")
+                            imageLink = http.getBaseUrl()+jsonItem.getString("imageLink")
                         )
                         resultList.add(item)
                     }

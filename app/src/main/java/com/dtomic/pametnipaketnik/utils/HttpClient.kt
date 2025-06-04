@@ -8,19 +8,24 @@ import java.io.IOException
 
 class HttpClientWrapper {
 
-    //private val baseUrl = "https://pp.dtomic.com/api/"
-    private val baseUrl = "http://192.168.1.45:3001/api/"
+    //private val baseUrl = "https://pp.dtomic.com/"
+    private val baseUrl = "http://192.168.1.213:3001/"
+    private val baseApiUrl = "${baseUrl}api/"
     private val client = OkHttpClient()
     private var bearerToken: String? = null
+
+    fun getBaseUrl() : String {
+        return baseUrl
+    }
 
     fun get(
         endpoint: String,
         headers: Map<String, String> = emptyMap(),
         callback: (success: Boolean, response: String?) -> Unit
     ) {
-        Log.d("HttpClientWrapper GET", "URL: $baseUrl$endpoint");
+        Log.d("HttpClientWrapper GET", "URL: $baseApiUrl$endpoint");
         val request = Request.Builder()
-            .url(baseUrl + endpoint)
+            .url(baseApiUrl + endpoint)
             .apply {
                 headers.forEach { (key, value) ->
                     addHeader(key, value)
@@ -50,10 +55,10 @@ class HttpClientWrapper {
         val mediaType = "application/json; charset=utf-8".toMediaType()
         val body = jsonBody.toRequestBody(mediaType)
 
-        Log.d("HttpClientWrapper POST", "URL: $baseUrl$endpoint")
+        Log.d("HttpClientWrapper POST", "URL: $baseApiUrl$endpoint")
         Log.d("POST BODY", jsonBody)
         val request = Request.Builder()
-            .url(baseUrl + endpoint)
+            .url(baseApiUrl + endpoint)
             .apply {
                 headers.forEach { (key, value) ->
                     addHeader(key, value)
