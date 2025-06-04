@@ -70,6 +70,7 @@ class LoginViewModel : ViewModel() {
         }.toString()
 
         http.postJson("user/login", jsonBody) { success, responseBody ->
+            Log.d("TILEN", "success: $success,\nresponse: $responseBody")
             if (success && responseBody != null) {
                 try {
                     val json = JSONObject(responseBody)

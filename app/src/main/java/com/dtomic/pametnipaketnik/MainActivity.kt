@@ -11,6 +11,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.dtomic.pametnipaketnik.composable.pages.Page_BuyItem
 import com.dtomic.pametnipaketnik.composable.pages.Page_Login
 import com.dtomic.pametnipaketnik.composable.pages.Page_Login2FA
 import com.dtomic.pametnipaketnik.composable.pages.Page_MainMenu
@@ -58,5 +59,12 @@ fun AppNavigation() {
             Page_Login2FA(navController, username = username)
         }
         composable("MainMenuPage") {Page_MainMenu(navController)}
+        composable(
+            route = "Page_BuyItem/{itemId}",
+            arguments = listOf(navArgument("itemId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val itemId = backStackEntry.arguments?.getString("itemId") ?: ""
+            Page_BuyItem(navController, itemId = itemId)
+        }
     }
 }

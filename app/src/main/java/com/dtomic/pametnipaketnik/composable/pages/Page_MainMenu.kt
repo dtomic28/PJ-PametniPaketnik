@@ -1,6 +1,7 @@
 package com.dtomic.pametnipaketnik.composable.pages
 
 import android.util.Log
+import android.view.MenuItem
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,27 +13,23 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -43,30 +40,81 @@ import androidx.navigation.compose.rememberNavController
 import com.dtomic.pametnipaketnik.R
 import com.dtomic.pametnipaketnik.composable.parts.Custom_Button
 import com.dtomic.pametnipaketnik.composable.parts.Custom_ErrorBox
-import com.dtomic.pametnipaketnik.composable.parts.Custom_Logo
-import com.dtomic.pametnipaketnik.composable.parts.Custom_TextField
+import com.dtomic.pametnipaketnik.composable.parts.Custom_ItemCardRow
 import com.dtomic.pametnipaketnik.ui.theme.AppTheme
 import com.dtomic.pametnipaketnik.utils.HttpClientWrapper
-import com.dtomic.pametnipaketnik.utils.hashPassword
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
 class MainMenuViewModel : ViewModel() {
+    data class MenuItem(
+        val id: String,
+        val name: String,
+        val description: String,
+        val price: Int,
+        val imageLink: String
+    )
+
     private val _errorMessage = MutableStateFlow("")
     val errorMessage: StateFlow<String> = _errorMessage
 
     private val http = HttpClientWrapper()
+
+    private val _items = MutableStateFlow<List<MenuItem>>(emptyList())
+    val items: StateFlow<List<MenuItem>> = _items
+
+    init {
+        viewModelScope.launch {
+            try {
+                loadItems()
+            } catch (e: Exception) {
+                Log.e("TILEN", "Failed to load items", e)
+            }
+        }
+    }
+
+    //TODO
+    private suspend fun loadItems(): Boolean = suspendCoroutine { cont ->
+        http.get("item/getSellingItems") { success, responseBody ->
+            if (success && responseBody != null) {
+                try {
+                    val jsonArray = JSONArray(responseBody)
+                    val resultList = mutableListOf<MenuItem>()
+                    for (i in 0 until jsonArray.length()) {
+                        val jsonItem = jsonArray.getJSONObject(i)
+                        val item = MenuItem(
+                            id = jsonItem.getString("_id"),
+                            name = jsonItem.getString("name"),
+                            description = jsonItem.getString("description"),
+                            price = jsonItem.getInt("price"),
+                            imageLink = jsonItem.getString("imageLink")
+                        )
+                        resultList.add(item)
+                    }
+                    _items.value = resultList
+                    cont.resume(true)
+                } catch (e: Exception) {
+                    cont.resumeWithException(e)
+                }
+            } else {
+                cont.resumeWithException(Exception("HTTP error: $responseBody"))
+            }
+        }
+    }
 }
 
 @Composable
 fun Page_MainMenu(navController: NavController, viewModel: MainMenuViewModel = viewModel()) {
     val errorMessage by viewModel.errorMessage.collectAsState()
     val error = errorMessage.isNotEmpty()
+
+    val itemList by viewModel.items.collectAsState()
 
     Box( // whole screen
         modifier = Modifier
@@ -145,7 +193,21 @@ fun Page_MainMenu(navController: NavController, viewModel: MainMenuViewModel = v
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.primaryContainer,
             ) {
-
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(itemList) { item ->
+                        Custom_ItemCardRow(
+                            item = item,
+                            onClick = {
+                                navController.navigate("Page_BuyItem/${item.id}")
+                            }
+                        )
+                    }
+                }
             }
             Row(
                 modifier = Modifier
