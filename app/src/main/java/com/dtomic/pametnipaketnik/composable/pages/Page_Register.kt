@@ -95,7 +95,7 @@ class RegisterViewModel : ViewModel() {
         val jsonBody = JSONObject().apply {
             put("username", username)
             put("email", email)
-            put("password", hashPassword(password)) // Make sure to hash the password!
+            put("password", password)
         }.toString()
 
         http.postJson("user/register", jsonBody) { success, responseBody ->
