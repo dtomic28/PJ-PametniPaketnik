@@ -35,9 +35,8 @@ fun TestWithBoxId(boxId: String) {
         withContext(Dispatchers.IO) {
             try {
                 status = "Connecting to server..."
-                val http = HttpClientWrapper()
 
-                http.get("token/requestToken/$boxId") { success, responseBody ->
+                HttpClientWrapper.get("token/requestToken/$boxId") { success, responseBody ->
                     if (success && responseBody != null) {
                         try {
                             status = "Processing response..."

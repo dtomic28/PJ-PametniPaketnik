@@ -8,6 +8,7 @@
     <string name="btn_items">Items</string>
     <string name="btn_activeTransactions">Active</string>
     <string name="btn_sell">Sell</string>
+    <string name="btn_buy">Buy</string>
 
     <string name="err_generic">An Error has occurred.</string>
     <string name="err_missingImage">Image does not exist.</string>
@@ -16,4 +17,9 @@
     <string name="txt_email">Enter your email</string>
     <string name="txt_password">Enter your password</string>
     <string name="txt_repeatPassword">Repeat your password</string>
+    <string name="txt_itemName">Name</string>
+    <string name="txt_itemDescription">Description</string>
+    <string name="txt_itemPrice">Price</string>
+    <string name="txt_boxID">BoxID</string>
+
 </resources>

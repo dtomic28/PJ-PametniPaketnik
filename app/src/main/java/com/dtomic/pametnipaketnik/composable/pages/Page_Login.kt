@@ -40,7 +40,6 @@ import com.dtomic.pametnipaketnik.composable.parts.Custom_Logo
 import com.dtomic.pametnipaketnik.composable.parts.Custom_TextField
 import com.dtomic.pametnipaketnik.ui.theme.AppTheme
 import com.dtomic.pametnipaketnik.utils.HttpClientWrapper
-import com.dtomic.pametnipaketnik.utils.hashPassword
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -61,22 +60,20 @@ class LoginViewModel : ViewModel() {
     private val _moveTo2FA = MutableStateFlow(false)
     val moveTo2FA: StateFlow<Boolean> = _moveTo2FA
 
-    private val http = HttpClientWrapper()
-
     private suspend fun sendLogin(username: String, password: String) : Boolean = suspendCoroutine { cont ->
         val jsonBody = JSONObject().apply {
             put("username", username)
             put("password", password)
         }.toString()
 
-        http.postJson("user/login", jsonBody) { success, responseBody ->
+        HttpClientWrapper.postJson("user/login", jsonBody) { success, responseBody ->
             Log.d("TILEN", "success: $success,\nresponse: $responseBody")
             if (success && responseBody != null) {
                 try {
                     val json = JSONObject(responseBody)
                     if (json.has("token")) {
                         val token = json.getString("token")
-                        HttpClientWrapper().setBearerToken(token) // Or your shared instance
+                        HttpClientWrapper.setBearerToken(token)
                         Log.i("Page_Login", "Login success, token set")
                         cont.resume(true)
                     } else {

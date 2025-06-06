@@ -44,7 +44,6 @@ import com.dtomic.pametnipaketnik.composable.parts.Custom_Logo
 import com.dtomic.pametnipaketnik.composable.parts.Custom_TextField
 import com.dtomic.pametnipaketnik.ui.theme.AppTheme
 import com.dtomic.pametnipaketnik.utils.HttpClientWrapper
-import com.dtomic.pametnipaketnik.utils.hashPassword
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -67,7 +66,6 @@ class Login2FAViewModel : ViewModel() {
     private val _moveToMainMenu = MutableStateFlow(false)
     val moveToMainMenu: StateFlow<Boolean> = _moveToMainMenu
 
-    private val http = HttpClientWrapper()
 
     fun takePicture() {
         viewModelScope.launch {

@@ -42,7 +42,6 @@ import com.dtomic.pametnipaketnik.composable.parts.Custom_Logo
 import com.dtomic.pametnipaketnik.composable.parts.Custom_TextField
 import com.dtomic.pametnipaketnik.ui.theme.AppTheme
 import com.dtomic.pametnipaketnik.utils.HttpClientWrapper
-import com.dtomic.pametnipaketnik.utils.hashPassword
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -68,10 +67,9 @@ class RegisterViewModel : ViewModel() {
     private val _moveTo2FA = MutableStateFlow(false)
     val moveTo2FA: StateFlow<Boolean> = _moveTo2FA
 
-    private val http = HttpClientWrapper()
 
     private suspend fun usernameExists(username: String): Boolean = suspendCoroutine { cont ->
-        http.get("user/usernameExists/${username}") { success, responseBody ->
+        HttpClientWrapper.get("user/usernameExists/${username}") { success, responseBody ->
             if (success && responseBody != null) {
                 try {
                     val validity = JSONObject(responseBody)
@@ -98,7 +96,7 @@ class RegisterViewModel : ViewModel() {
             put("password", password)
         }.toString()
 
-        http.postJson("user/register", jsonBody) { success, responseBody ->
+        HttpClientWrapper.postJson("user/register", jsonBody) { success, responseBody ->
             if (success && responseBody != null) {
                 cont.resume(true)
                 _moveTo2FA.value = true

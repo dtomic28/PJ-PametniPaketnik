@@ -64,7 +64,6 @@ class MainMenuViewModel : ViewModel() {
     private val _errorMessage = MutableStateFlow("")
     val errorMessage: StateFlow<String> = _errorMessage
 
-    private val http = HttpClientWrapper()
 
     private val _items = MutableStateFlow<List<MenuItem>>(emptyList())
     val items: StateFlow<List<MenuItem>> = _items
@@ -79,9 +78,8 @@ class MainMenuViewModel : ViewModel() {
         }
     }
 
-    //TODO
     private suspend fun loadItems(): Boolean = suspendCoroutine { cont ->
-        http.get("item/getSellingItems") { success, responseBody ->
+        HttpClientWrapper.get("item/getSellingItems") { success, responseBody ->
             if (success && responseBody != null) {
                 try {
                     val jsonArray = JSONArray(responseBody)
@@ -93,7 +91,7 @@ class MainMenuViewModel : ViewModel() {
                             name = jsonItem.getString("name"),
                             description = jsonItem.getString("description"),
                             price = jsonItem.getInt("price"),
-                            imageLink = http.getBaseUrl()+jsonItem.getString("imageLink")
+                            imageLink = HttpClientWrapper.getBaseUrl()+jsonItem.getString("imageLink")
                         )
                         resultList.add(item)
                     }

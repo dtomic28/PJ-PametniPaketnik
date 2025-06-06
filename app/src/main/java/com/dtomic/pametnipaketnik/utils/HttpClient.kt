@@ -6,10 +6,10 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 
-class HttpClientWrapper {
+object HttpClientWrapper {
 
     //private val baseUrl = "https://pp.dtomic.com/"
-    private val baseUrl = "http://192.168.1.213:3001/"
+    private val baseUrl = "http://192.168.64.14:3001/"
     private val baseApiUrl = "${baseUrl}api/"
     private val client = OkHttpClient()
     private var bearerToken: String? = null
@@ -63,7 +63,8 @@ class HttpClientWrapper {
                 headers.forEach { (key, value) ->
                     addHeader(key, value)
                 }
-                bearerToken?.let { addHeader("Authorization", "Bearer $it") }
+                bearerToken?.let { addHeader("authorization", "Bearer $it") }
+                Log.d("TILEN", bearerToken.toString())
             }
             .post(body)
             .build()

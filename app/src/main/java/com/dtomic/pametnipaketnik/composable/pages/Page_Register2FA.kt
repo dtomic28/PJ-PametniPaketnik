@@ -50,7 +50,6 @@ class Register2FAViewModel : ViewModel() {
     private val _errorMessage = MutableStateFlow("Press the + button and move your head for 2 seconds while looking at the camera. Repeat 10 times!")
     val errorMessage: StateFlow<String> = _errorMessage
 
-    private val http = HttpClientWrapper()
 
     fun takePictureBatch() {
         _numOfBatches.value++

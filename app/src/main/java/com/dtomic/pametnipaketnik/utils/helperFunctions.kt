@@ -1,18 +1,31 @@
 package com.dtomic.pametnipaketnik.utils
 
 import android.R.attr.text
+import android.content.Context
+import android.media.MediaPlayer
+import android.util.Base64
 import android.util.Log
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalContext
+import com.dtomic.pametnipaketnik.utils.HttpClientWrapper
+import com.google.gson.Gson
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.security.MessageDigest
 import java.util.zip.ZipInputStream
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
-fun saveBase64ToFile(context: android.content.Context, fileName: String, decodedBytes: ByteArray): Boolean {
+fun saveBase64ToFile(context: Context, fileName: String, decodedBytes: ByteArray): Boolean {
     return try {
-        val fos: FileOutputStream = context.openFileOutput(fileName, android.content.Context.MODE_PRIVATE)
+        val fos: FileOutputStream = context.openFileOutput(fileName, Context.MODE_PRIVATE)
         fos.write(decodedBytes)
         fos.close()
         true
@@ -22,7 +35,7 @@ fun saveBase64ToFile(context: android.content.Context, fileName: String, decoded
     }
 }
 
-fun extractZip(context: android.content.Context, zipFileName: String, destinationDir: File): List<String> {
+fun extractZip(context: Context, zipFileName: String, destinationDir: File): List<String> {
     val extractedFiles = mutableListOf<String>()
 
     val zipFile = File(context.filesDir, zipFileName)
@@ -52,8 +65,8 @@ fun extractZip(context: android.content.Context, zipFileName: String, destinatio
     return extractedFiles
 }
 
-fun playAudio(context: android.content.Context, filePath: String) {
-    val mediaPlayer = android.media.MediaPlayer().apply {
+fun playAudio(context: Context, filePath: String) {
+    val mediaPlayer = MediaPlayer().apply {
         try {
             setDataSource(filePath)
             prepare()
@@ -67,12 +80,35 @@ fun playAudio(context: android.content.Context, filePath: String) {
     }
 }
 
-fun hashPassword(password: String): String {
-    return try {
-        val digest = MessageDigest.getInstance("SHA-256")
-        val hashBytes = digest.digest(password.toByteArray(Charsets.UTF_8))
-        hashBytes.fold("") { str, it -> str + "%02x".format(it) }
+fun playToken(boxId : String, context: Context) {
+    val context = context
+    try {
+
+        HttpClientWrapper.get("token/requestToken/$boxId") { success, responseBody ->
+            if (success && responseBody != null) {
+                val gson = Gson()
+                val apiResponse = gson.fromJson(responseBody, ApiResponse::class.java)
+
+                val base64Data = apiResponse.data
+                val decodedBytes = Base64.decode(base64Data, Base64.DEFAULT)
+
+                val successSaving = saveBase64ToFile(context, "test.zip", decodedBytes)
+
+                if (successSaving) {
+                    val extractDir = File(context.cacheDir, "extracted_audio")
+                    extractDir.mkdirs()
+
+                    val extractedFiles = extractZip(context, "test.zip", extractDir)
+                    Log.i("ExtractedFiles", extractedFiles.joinToString())
+
+                    if (extractedFiles.contains("token.wav")) {
+                        playAudio(context, File(extractDir, "token.wav").absolutePath)
+                        Log.d("TILEN", "should have played sound")
+                    }
+                }
+            }
+        }
     } catch (e: Exception) {
-        throw Exception("Failed to hash password")
+        Log.e("RequestError", "Exception in HTTP request", e)
     }
 }

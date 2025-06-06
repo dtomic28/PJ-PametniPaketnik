@@ -39,7 +39,6 @@ import com.dtomic.pametnipaketnik.R
 import com.dtomic.pametnipaketnik.utils.HttpClientWrapper
 
 class ItemCardViewModel: ViewModel() {
-    val http = HttpClientWrapper();
 }
 
 @Composable
