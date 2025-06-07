@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -22,16 +24,22 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import coil3.ImageLoader
+import coil3.Uri
 import coil3.compose.AsyncImage
+import coil3.request.ErrorResult
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.dtomic.pametnipaketnik.composable.pages.MainMenuViewModel
@@ -40,6 +48,8 @@ import com.dtomic.pametnipaketnik.utils.HttpClientWrapper
 
 class ItemCardViewModel: ViewModel() {
 }
+
+
 
 @Composable
 fun Custom_ItemCardRow(item: MainMenuViewModel.MenuItem, onClick: () -> Unit, viewModel: ItemCardViewModel = ItemCardViewModel()) {
@@ -61,25 +71,14 @@ fun Custom_ItemCardRow(item: MainMenuViewModel.MenuItem, onClick: () -> Unit, vi
                 .height(64.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AsyncImage(
-                /*
-
-                   TODO kjrkol:
-                        fix ta image tuki, v item.image link je shranjen ceu link do slike na backend
-                        (v mojm primeri localhost:3001/images/default.jpg) in ta link dela prek
-                        browserja tud n seperate device, v tem imageLink pa ne dela - namest tega
-                        defaulta na error state (R.drawable.ic_launcher_background)
-
-                 */
-                model = item.imageLink,
-                contentDescription = "",
-                contentScale = ContentScale.FillBounds,
-                error = painterResource(R.drawable.ic_launcher_background),
+            DebuggableAsyncImage(
+                imageUrl = item.imageLink,
                 modifier = Modifier
+                    .clip(CircleShape)
                     .fillMaxHeight()
                     .width(64.dp)
             )
-
+            Spacer(modifier = Modifier.width(5.dp))
             Text(
                 text = item.name,
                 style = MaterialTheme.typography.bodyLarge,
@@ -111,4 +110,38 @@ private fun PreviewItemCardRow() {
         )
     }
 
+}
+
+
+@Composable
+fun DebuggableAsyncImage(
+    imageUrl: String,
+    modifier: Modifier = Modifier,
+    errorDrawable: Painter = painterResource(R.drawable.ic_launcher_foreground)
+) {
+    val context = LocalContext.current
+
+    val request = ImageRequest.Builder(context)
+        .data(imageUrl)
+        .crossfade(true)
+        .listener(
+            onStart = {
+                Log.d("Coil3Debug", "Request started for $imageUrl")
+            },
+            onSuccess = { request, metadata ->
+                Log.d("Coil3Debug", "Request succeeded for $imageUrl")
+            },
+            onError = { request, errorResult: ErrorResult ->
+                Log.e("Coil3Debug", "Request failed for $imageUrl: ${errorResult.throwable.message}")
+            }
+        )
+        .build()
+
+    AsyncImage(
+        model = request,
+        contentDescription = null,
+        contentScale = ContentScale.Crop,
+        modifier = modifier,
+        error = errorDrawable
+    )
 }
