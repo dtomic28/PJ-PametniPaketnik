@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -25,6 +27,8 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -36,6 +40,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import coil3.compose.AsyncImage
 import com.dtomic.pametnipaketnik.R
 import com.dtomic.pametnipaketnik.composable.parts.Custom_Button
 import com.dtomic.pametnipaketnik.composable.parts.Custom_ErrorBox
@@ -72,6 +77,7 @@ class PageViewModel(private val itemId: String) : ViewModel() {
     val itemDescription = mutableStateOf("Error!")
     val itemPrice = mutableStateOf("Error!")
     val boxID = mutableStateOf("Error!")
+    val pathToImage = mutableStateOf("")
 
     private val _moveToMainMenu = MutableStateFlow(false)
     val moveToMainMenu: StateFlow<Boolean> = _moveToMainMenu
@@ -91,6 +97,7 @@ class PageViewModel(private val itemId: String) : ViewModel() {
                     itemDescription.value = item.getString("itemDescription")
                     itemPrice.value = item.getString("itemPrice") + "€"
                     boxID.value = item.getString("boxID")
+                    pathToImage.value = HttpClientWrapper.getBaseUrl() + item.getString("pathToImage")
                     cont.resume(true)
                 } catch (e: Exception) {
                     _errorMessage.value = e.message.toString()
@@ -191,16 +198,23 @@ fun Page_BuyItem(navController: NavController, itemId: String) {
                     verticalArrangement = Arrangement.SpaceBetween,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Box( // logo box
+                    Box(
                         modifier = Modifier
                             .weight(0.3f)
                             .fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Custom_Logo(
-                            size = 100.dp
+                        Log.d("TILEN", viewModel.pathToImage.value)
+                        AsyncImage(
+                            model = viewModel.pathToImage.value,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(100.dp)
+                                .clip(CircleShape)
                         )
                     }
+
 
                     Column( // buttons column
                         modifier = Modifier

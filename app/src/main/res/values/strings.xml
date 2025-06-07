@@ -18,6 +18,7 @@
     <string name="btn_toggleTransactionHistory">Transaction history</string>
     <string name="btn_toggleStatistics">Statistics</string>
     <string name="btn_logout">Logout</string>
+    <string name="btn_selectImg">Select image</string>
 
     <string name="err_generic">An Error has occurred.</string>
     <string name="err_missingImage">Image does not exist.</string>

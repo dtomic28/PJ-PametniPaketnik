@@ -1,27 +1,19 @@
 package com.dtomic.pametnipaketnik.utils
 
-import android.R.attr.text
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.media.MediaPlayer
+import android.net.Uri
 import android.util.Base64
 import android.util.Log
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.layout
-import androidx.compose.ui.platform.LocalContext
-import com.dtomic.pametnipaketnik.utils.HttpClientWrapper
 import com.google.gson.Gson
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import org.json.JSONObject
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import java.security.MessageDigest
 import java.util.zip.ZipInputStream
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
+import androidx.core.graphics.scale
 
 fun saveBase64ToFile(context: Context, fileName: String, decodedBytes: ByteArray): Boolean {
     return try {
@@ -110,5 +102,26 @@ fun playToken(boxId : String, context: Context) {
         }
     } catch (e: Exception) {
         Log.e("RequestError", "Exception in HTTP request", e)
+    }
+}
+
+fun uriToBase64(context: Context, uri: Uri?): String? {
+    if (uri == null) return null
+
+    return try {
+        val inputStream = context.contentResolver.openInputStream(uri)
+        val originalBitmap = BitmapFactory.decodeStream(inputStream)
+        inputStream?.close()
+
+        val resizedBitmap = originalBitmap.scale(128, 128)
+
+        val outputStream = ByteArrayOutputStream()
+        resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 50, outputStream)
+
+        val byteArray = outputStream.toByteArray()
+        Base64.encodeToString(byteArray, Base64.DEFAULT)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
     }
 }

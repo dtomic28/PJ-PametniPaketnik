@@ -71,11 +71,12 @@ fun Custom_ItemCardRow(item: MainMenuViewModel.MenuItem, onClick: () -> Unit, vi
                 .height(64.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            DebuggableAsyncImage(
-                imageUrl = item.imageLink,
+            AsyncImage(
+                model = item.imageLink,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                error = painterResource(R.drawable.ic_launcher_foreground),
                 modifier = Modifier
-                    .clip(CircleShape)
-                    .fillMaxHeight()
                     .width(64.dp)
             )
             Spacer(modifier = Modifier.width(5.dp))
@@ -110,38 +111,4 @@ private fun PreviewItemCardRow() {
         )
     }
 
-}
-
-
-@Composable
-fun DebuggableAsyncImage(
-    imageUrl: String,
-    modifier: Modifier = Modifier,
-    errorDrawable: Painter = painterResource(R.drawable.ic_launcher_foreground)
-) {
-    val context = LocalContext.current
-
-    val request = ImageRequest.Builder(context)
-        .data(imageUrl)
-        .crossfade(true)
-        .listener(
-            onStart = {
-                Log.d("Coil3Debug", "Request started for $imageUrl")
-            },
-            onSuccess = { request, metadata ->
-                Log.d("Coil3Debug", "Request succeeded for $imageUrl")
-            },
-            onError = { request, errorResult: ErrorResult ->
-                Log.e("Coil3Debug", "Request failed for $imageUrl: ${errorResult.throwable.message}")
-            }
-        )
-        .build()
-
-    AsyncImage(
-        model = request,
-        contentDescription = null,
-        contentScale = ContentScale.Crop,
-        modifier = modifier,
-        error = errorDrawable
-    )
 }
