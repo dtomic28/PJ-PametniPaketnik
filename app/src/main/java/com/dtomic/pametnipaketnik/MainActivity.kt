@@ -17,6 +17,7 @@ import com.dtomic.pametnipaketnik.composable.pages.Page_Login2FA
 import com.dtomic.pametnipaketnik.composable.pages.Page_MainMenu
 import com.dtomic.pametnipaketnik.composable.pages.Page_Register
 import com.dtomic.pametnipaketnik.composable.pages.Page_Register2FA
+import com.dtomic.pametnipaketnik.composable.pages.Page_SellItem
 import com.dtomic.pametnipaketnik.composable.pages.Page_Title
 import com.dtomic.pametnipaketnik.ui.theme.AppTheme
 
@@ -44,6 +45,7 @@ fun AppNavigation() {
         composable("TitlePage") { Page_Title(navController) }
         composable("LoginPage") { Page_Login(navController) }
         composable("RegisterPage") { Page_Register(navController) }
+        composable("ItemSell") { Page_SellItem(navController) }
         composable(
             route = "RegisterPage2FA/{username}",
             arguments = listOf(navArgument("username") { type = NavType.StringType })

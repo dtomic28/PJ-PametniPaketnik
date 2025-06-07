@@ -2,7 +2,6 @@ package com.dtomic.pametnipaketnik.composable.pages
 
 import android.R.attr.password
 import android.util.Log
-import android.util.Log.e
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,23 +11,27 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -37,89 +40,82 @@ import com.dtomic.pametnipaketnik.R
 import com.dtomic.pametnipaketnik.composable.parts.Custom_Button
 import com.dtomic.pametnipaketnik.composable.parts.Custom_ErrorBox
 import com.dtomic.pametnipaketnik.composable.parts.Custom_Logo
+import com.dtomic.pametnipaketnik.composable.parts.Custom_Text
 import com.dtomic.pametnipaketnik.composable.parts.Custom_TextField
 import com.dtomic.pametnipaketnik.ui.theme.AppTheme
 import com.dtomic.pametnipaketnik.utils.HttpClientWrapper
+import com.dtomic.pametnipaketnik.utils.playToken
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import java.nio.file.Files.exists
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
-// MODEL
-class LoginViewModel : ViewModel() {
 
-    val username = mutableStateOf("")
-    val password = mutableStateOf("")
+class SellItemViewModel() : ViewModel() {
+
+    val itemName = mutableStateOf("")
+    val itemDescription = mutableStateOf("")
+    val itemPrice = mutableStateOf("")
+    val boxID = mutableStateOf("")
 
     private val _errorMessage = MutableStateFlow("")
     val errorMessage: StateFlow<String> = _errorMessage
 
-    private val _moveTo2FA = MutableStateFlow(false)
-    val moveTo2FA: StateFlow<Boolean> = _moveTo2FA
+    private val _moveToMainMenu = MutableStateFlow(false)
+    val moveToMainMenu: StateFlow<Boolean> = _moveToMainMenu
 
-    private suspend fun sendLogin(username: String, password: String) : Boolean = suspendCoroutine { cont ->
-        val jsonBody = JSONObject().apply {
-            put("username", username)
-            put("password", password)
-        }.toString()
+    private val _playToken = MutableStateFlow(false)
+    val playToken: StateFlow<Boolean> = _playToken
 
-        HttpClientWrapper.postJson("user/login", jsonBody) { success, responseBody ->
-            if (success && responseBody != null) {
-                try {
-                    val json = JSONObject(responseBody)
-                    if (json.has("token")) {
-                        val token = json.getString("token")
-                        HttpClientWrapper.setBearerToken(token)
-                        Log.i("Page_Login", "Login success, token set")
-                        cont.resume(true)
-                    } else {
-                        Log.e("Page_Login", "Token missing in response: $responseBody")
-                        cont.resumeWithException(Exception("Token missing in response"))
-                    }
-                } catch (e: Exception) {
-                    Log.e("Page_Login", "JSON parsing error: ${e.message}")
-                    cont.resumeWithException(e)
-                }
-            } else {
-                Log.e("Page_Login", "Login fail $responseBody")
-                cont.resumeWithException(Exception("HTTP error: $responseBody"))
-            }
-        }
-
-    }
-
-    fun loginUser() {
+    fun sellItem() {
         viewModelScope.launch {
-            try {
-                if (sendLogin(username.value, password.value)) {
-                    _moveTo2FA.value = true
+            val jsonBody = JSONObject().apply {
+                put("name", itemName.value)
+                put("description", itemDescription.value)
+                put("price", itemPrice.value)
+                put("boxID", boxID.value)
+                put("image", "")
+            }.toString()
+
+            HttpClientWrapper.postJson("item/sellItem", jsonBody) { success, responseBody ->
+                if (success && responseBody != null) {
+                    _playToken.value = true
+                    _moveToMainMenu.value = true
                 }
-            }
-            catch (e: Exception) {
-                _errorMessage.value = "Error while trying to log in."
+                else {
+                    _errorMessage.value = responseBody.toString()
+                }
             }
         }
     }
     fun resetNavigation() {
-        _moveTo2FA.value = false
+        _moveToMainMenu.value = false
     }
 }
 
-//VIEW
 @Composable
-fun Page_Login(navController: NavController, viewModel: LoginViewModel = viewModel()) {
+fun Page_SellItem(navController: NavController, viewModel: SellItemViewModel = viewModel()) {
     val errorMessage by viewModel.errorMessage.collectAsState()
     val error = errorMessage.isNotEmpty()
 
-    val navTrigger by viewModel.moveTo2FA.collectAsState()
+    val context = LocalContext.current
+    val playTokenFlag by viewModel.playToken.collectAsState()
+    LaunchedEffect(playTokenFlag) {
+        if (playTokenFlag && viewModel.boxID.value != "Error!") {
+            playToken(viewModel.boxID.value, context)
+        }
+    }
 
+    val navTrigger by viewModel.moveToMainMenu.collectAsState()
     LaunchedEffect(navTrigger) {
         if (navTrigger) {
-            navController.navigate("LoginPage2FA/${viewModel.username.value}")
-            // Optionally reset the trigger to prevent repeated navigation
+            navController.popBackStack()
             viewModel.resetNavigation()
         }
     }
@@ -142,8 +138,7 @@ fun Page_Login(navController: NavController, viewModel: LoginViewModel = viewMod
             ) {
                 if (error) Custom_ErrorBox(errorMessage)
             }
-            Surface(
-                // island
+            Surface( // Center Island
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
                     .weight(0.6f),
@@ -152,14 +147,14 @@ fun Page_Login(navController: NavController, viewModel: LoginViewModel = viewMod
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.primaryContainer,
             ) {
-                Column( // logo/buttons devision
+                Column( // logo/input devision
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.SpaceBetween,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box( // logo box
                         modifier = Modifier
-                            .weight(0.4f)
+                            .weight(0.3f)
                             .fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
@@ -170,31 +165,39 @@ fun Page_Login(navController: NavController, viewModel: LoginViewModel = viewMod
 
                     Column( // buttons column
                         modifier = Modifier
-                            .weight(0.6f)
+                            .weight(0.7f)
                             .fillMaxWidth(),
-                        verticalArrangement = Arrangement.Top,
+                        verticalArrangement = Arrangement.SpaceBetween,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Custom_TextField(
-                            value = viewModel.username.value,
-                            onValueChange = { viewModel.username.value = it },
-                            placeholderText = stringResource(R.string.txt_username),
+                            value = viewModel.itemName.value,
+                            onValueChange = { viewModel.itemName.value = it },
+                            placeholderText = stringResource(R.string.txt_enterItemName),
                             keyboardType = KeyboardType.Text
                         )
-                        Spacer(
-                            modifier = Modifier
-                                .height(10.dp)
+                        Custom_TextField(
+                            value = viewModel.itemDescription.value,
+                            onValueChange = { viewModel.itemDescription.value = it },
+                            placeholderText = stringResource(R.string.txt_enterItemDescription),
+                            keyboardType = KeyboardType.Text
                         )
                         Custom_TextField(
-                            value = viewModel.password.value,
-                            onValueChange = { viewModel.password.value = it },
-                            placeholderText = stringResource(R.string.txt_password),
-                            keyboardType = KeyboardType.Password
+                            value = viewModel.itemPrice.value,
+                            onValueChange = { viewModel.itemPrice.value = it },
+                            placeholderText = stringResource(R.string.txt_enterItemPrice),
+                            keyboardType = KeyboardType.Number
+                        )
+                        Custom_TextField(
+                            value = viewModel.boxID.value,
+                            onValueChange = { viewModel.boxID.value = it },
+                            placeholderText = stringResource(R.string.txt_enterBoxId),
+                            keyboardType = KeyboardType.Number
                         )
                     }
                 }
             }
-            Row(
+            Row( // Buttons
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
                     .weight(0.2f),
@@ -214,15 +217,12 @@ fun Page_Login(navController: NavController, viewModel: LoginViewModel = viewMod
                     modifier = Modifier
                         .weight(0.1f)
                 )
-                Custom_Button( // Next
-                    modifier = Modifier
-                        .height(60.dp)
-                        .weight(0.45f),
-                    text = stringResource(R.string.btn_next),
-                    onClick = { viewModel.loginUser() },
+                Custom_Button(
+                    modifier = Modifier.height(60.dp).weight(0.45f),
+                    text = stringResource(R.string.btn_sell),
+                    onClick = { viewModel.sellItem() }
                 )
             }
-
         }
     }
 }
@@ -232,6 +232,6 @@ fun Page_Login(navController: NavController, viewModel: LoginViewModel = viewMod
 private fun Preview() {
     val navController = rememberNavController()
     AppTheme {
-        Page_Login(navController)
+        Page_SellItem(navController)
     }
 }

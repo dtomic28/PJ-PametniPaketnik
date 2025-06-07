@@ -39,7 +39,7 @@ fun Custom_Text(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .height(64.dp)
+            .height(70.dp)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         shape = RoundedCornerShape(12.dp),
         tonalElevation = 2.dp,
@@ -90,8 +90,6 @@ private fun CustomButtonPreview() {
         Custom_Text(
             textLeft = "Label",
             textRight = "Description",
-            modifier = Modifier
-                .height(64.dp)
         )
     }
 }

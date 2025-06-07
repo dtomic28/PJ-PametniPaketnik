@@ -21,5 +21,9 @@
     <string name="txt_itemDescription">Description</string>
     <string name="txt_itemPrice">Price</string>
     <string name="txt_boxID">BoxID</string>
+    <string name="txt_enterItemName">Enter item name</string>
+    <string name="txt_enterItemDescription">Enter item description</string>
+    <string name="txt_enterItemPrice">Enter item price</string>
+    <string name="txt_enterBoxId">Enter the Box ID</string>
 
 </resources>

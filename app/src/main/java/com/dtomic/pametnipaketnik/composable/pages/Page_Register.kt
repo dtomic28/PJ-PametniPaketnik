@@ -124,7 +124,7 @@ class RegisterViewModel : ViewModel() {
                 }
             }
             catch (e: Exception) {
-                Log.d("TILEN", e.message ?: "error when getting usernames and verifying user")
+                Log.d("registerUser", e.message ?: "error when getting usernames and verifying user")
             }
         }
 

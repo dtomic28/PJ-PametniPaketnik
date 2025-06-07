@@ -64,7 +64,6 @@ object HttpClientWrapper {
                     addHeader(key, value)
                 }
                 bearerToken?.let { addHeader("authorization", "Bearer $it") }
-                Log.d("TILEN", bearerToken.toString())
             }
             .post(body)
             .build()
