@@ -71,7 +71,9 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import com.dtomic.pametnipaketnik.composable.parts.Custom_UserDashboard
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.*
+import androidx.compose.foundation.layout.offset
 import com.dtomic.pametnipaketnik.composable.parts.Custom_SettingsDashboard
+import androidx.compose.animation.core.animateDpAsState
 
 class MainMenuViewModel : ViewModel() {
     data class MenuItem(
@@ -305,7 +307,14 @@ fun Page_MainMenu(navController: NavController, viewModel: MainMenuViewModel = v
             }
         }
 
-        if (showProfileMenu.value) {
+        val profileDrawerWidth = 300.dp
+        val isProfileOpen = showProfileMenu.value
+        val profileOffsetX by animateDpAsState(
+            targetValue = if (isProfileOpen) 0.dp else profileDrawerWidth,
+            animationSpec = tween(durationMillis = 300)
+        )
+
+        if (showProfileMenu.value || profileOffsetX != profileDrawerWidth) {
             Box(
                 Modifier
                     .fillMaxSize()
@@ -313,26 +322,33 @@ fun Page_MainMenu(navController: NavController, viewModel: MainMenuViewModel = v
                     .blur(10.dp)
                     .clickable { showProfileMenu.value = false }
             )
-
-            // Slide-in from RIGHT
-            Box(modifier = Modifier.fillMaxSize()) {
-                AnimatedVisibility(
-                    visible = true,
-                    enter = slideInHorizontally(
-                        initialOffsetX = { it },
-                        animationSpec = tween(durationMillis = 300)
-                    ),
-                    exit = slideOutHorizontally(
-                        targetOffsetX = { it },
-                        animationSpec = tween(durationMillis = 300)
-                    ),
-                    modifier = Modifier.align(Alignment.CenterEnd)
+            Box(
+                Modifier
+                    .fillMaxSize()
+            ) {
+                Box(
+                    Modifier
+                        .offset(x = profileOffsetX)
+                        .width(profileDrawerWidth)
+                        .fillMaxHeight()
+                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp))
+                        .align(Alignment.CenterEnd)
                 ) {
                     Custom_UserDashboard(onClose = { showProfileMenu.value = false })
                 }
             }
         }
-        if (showSettingsMenu.value) {
+
+
+
+        val drawerWidth = 300.dp
+        val isOpen = showSettingsMenu.value
+        val offsetX by animateDpAsState(
+            targetValue = if (isOpen) 0.dp else -drawerWidth,
+            animationSpec = tween(durationMillis = 300)
+        )
+
+        if (showSettingsMenu.value || offsetX != -drawerWidth) {
             Box(
                 Modifier
                     .fillMaxSize()
@@ -340,20 +356,17 @@ fun Page_MainMenu(navController: NavController, viewModel: MainMenuViewModel = v
                     .blur(10.dp)
                     .clickable { showSettingsMenu.value = false }
             )
-
-            // Slide-in from RIGHT
-            Box(modifier = Modifier.fillMaxSize()) {
-                AnimatedVisibility(
-                    visible = true,
-                    enter = slideInHorizontally(
-                        initialOffsetX = { it },
-                        animationSpec = tween(durationMillis = 300)
-                    ),
-                    exit = slideOutHorizontally(
-                        targetOffsetX = { it },
-                        animationSpec = tween(durationMillis = 300)
-                    ),
-                    modifier = Modifier.align(Alignment.CenterStart)
+            Box(
+                Modifier
+                    .fillMaxSize()
+            ) {
+                Box(
+                    Modifier
+                        .offset(x = offsetX)
+                        .width(drawerWidth)
+                        .fillMaxHeight()
+                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp))
+                        .align(Alignment.CenterStart)
                 ) {
                     Custom_SettingsDashboard(onClose = { showSettingsMenu.value = false })
                 }

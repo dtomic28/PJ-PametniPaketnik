@@ -22,7 +22,7 @@ fun Custom_SettingsDashboard(onClose: () -> Unit) {
     Surface(
         modifier = Modifier
             .fillMaxHeight()
-            .fillMaxWidth(0.8f),
+            .fillMaxWidth(1f),
         shape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp),
         tonalElevation = 8.dp
     ) {
@@ -33,7 +33,7 @@ fun Custom_SettingsDashboard(onClose: () -> Unit) {
                 Text("Settings")
             }
             Spacer(Modifier.height(8.dp))
-            Button(onClick = { onClose }) {
+            Button(onClick = { onClose() }) {
                 Text("Close")
             }
         }
