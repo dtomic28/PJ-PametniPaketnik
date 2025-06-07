@@ -73,6 +73,9 @@ class PageViewModel(private val itemId: String) : ViewModel() {
     val itemPrice = mutableStateOf("Error!")
     val boxID = mutableStateOf("Error!")
 
+    private val _moveToMainMenu = MutableStateFlow(false)
+    val moveToMainMenu: StateFlow<Boolean> = _moveToMainMenu
+
     private val _errorMessage = MutableStateFlow("")
     val errorMessage: StateFlow<String> = _errorMessage
 
@@ -105,10 +108,12 @@ class PageViewModel(private val itemId: String) : ViewModel() {
             val jsonBody = JSONObject().apply {
                 put("itemID", itemId)
             }.toString()
+            Log.d("TILEN", "json: ${jsonBody}")
 
-            HttpClientWrapper.postJson("item/buyItem/${itemId}", jsonBody) { success, responseBody ->
+            HttpClientWrapper.postJson("item/buyItem", jsonBody) { success, responseBody ->
                 if (success && responseBody != null) {
                     _playToken.value = true
+                    _moveToMainMenu.value = true
                 }
                 else {
                     _errorMessage.value = responseBody.toString()
@@ -127,6 +132,9 @@ class PageViewModel(private val itemId: String) : ViewModel() {
             }
         }
     }
+    fun resetNavigation() {
+        _moveToMainMenu.value = false
+    }
 }
 
 @Composable
@@ -134,12 +142,20 @@ fun Page_BuyItem(navController: NavController, itemId: String) {
     val viewModel: PageViewModel = viewModel(factory = PageViewModelFactory(itemId))
     val errorMessage by viewModel.errorMessage.collectAsState()
     val error = errorMessage.isNotEmpty()
+
     val context = LocalContext.current
     val playTokenFlag by viewModel.playToken.collectAsState()
-
     LaunchedEffect(playTokenFlag) {
         if (playTokenFlag && viewModel.boxID.value != "Error!") {
             playToken(viewModel.boxID.value, context)
+        }
+    }
+
+    val navTrigger by viewModel.moveToMainMenu.collectAsState()
+    LaunchedEffect(navTrigger) {
+        if (navTrigger) {
+            navController.popBackStack()
+            viewModel.resetNavigation()
         }
     }
 
@@ -235,8 +251,10 @@ fun Page_BuyItem(navController: NavController, itemId: String) {
                         .weight(0.1f)
                 )
                 Custom_Button(
-                    modifier = Modifier.height(60.dp).weight(0.45f),
-                    text = stringResource(R.string.btn_next),
+                    modifier = Modifier
+                        .height(60.dp)
+                        .weight(0.45f),
+                    text = stringResource(R.string.btn_buy),
                     onClick = { viewModel.buyItem() }
                 )
             }

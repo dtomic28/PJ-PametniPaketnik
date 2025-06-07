@@ -2,7 +2,12 @@ package com.dtomic.pametnipaketnik.composable.pages
 
 import android.util.Log
 import android.view.MenuItem
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,25 +18,36 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -51,6 +67,11 @@ import org.json.JSONObject
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import com.dtomic.pametnipaketnik.composable.parts.Custom_UserDashboard
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.*
+import com.dtomic.pametnipaketnik.composable.parts.Custom_SettingsDashboard
 
 class MainMenuViewModel : ViewModel() {
     data class MenuItem(
@@ -60,14 +81,6 @@ class MainMenuViewModel : ViewModel() {
         val price: Int,
         val imageLink: String
     )
-
-    private val _errorMessage = MutableStateFlow("")
-    val errorMessage: StateFlow<String> = _errorMessage
-
-
-    private val _items = MutableStateFlow<List<MenuItem>>(emptyList())
-    val items: StateFlow<List<MenuItem>> = _items
-
     init {
         viewModelScope.launch {
             try {
@@ -76,6 +89,19 @@ class MainMenuViewModel : ViewModel() {
                 Log.e("TILEN", "Failed to load items", e)
             }
         }
+    }
+
+    private val _errorMessage = MutableStateFlow("")
+    val errorMessage: StateFlow<String> = _errorMessage
+
+    private val _moveToItemSell = MutableStateFlow(false)
+    val moveToItemSell: StateFlow<Boolean> = _moveToItemSell
+
+    private val _items = MutableStateFlow<List<MenuItem>>(emptyList())
+    val items: StateFlow<List<MenuItem>> = _items
+
+    fun moveToItemSell() {
+        _moveToItemSell.value = true
     }
 
     private suspend fun loadItems(): Boolean = suspendCoroutine { cont ->
@@ -105,20 +131,62 @@ class MainMenuViewModel : ViewModel() {
             }
         }
     }
+
+    fun refreshItems() {
+        viewModelScope.launch {
+            try {
+                loadItems()
+            } catch (e: Exception) {
+                Log.e("TILEN", "Failed to refresh items", e)
+            }
+        }
+    }
+
+    fun resetNavigation() {
+        _moveToItemSell.value = false
+    }
 }
 
 @Composable
 fun Page_MainMenu(navController: NavController, viewModel: MainMenuViewModel = viewModel()) {
+    val showProfileMenu = remember { mutableStateOf(false) }
+    val showSettingsMenu = remember { mutableStateOf(false) }
+
     val errorMessage by viewModel.errorMessage.collectAsState()
     val error = errorMessage.isNotEmpty()
 
     val itemList by viewModel.items.collectAsState()
 
+    val navTrigger by viewModel.moveToItemSell.collectAsState()
+    LaunchedEffect(navTrigger) {
+        if (navTrigger) {
+            navController.navigate("ItemSell")
+            viewModel.resetNavigation()
+        }
+    }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val currentViewModel = rememberUpdatedState(viewModel)
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                currentViewModel.value.refreshItems()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+
     Box( // whole screen
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
-        contentAlignment = Alignment.Center
+        //contentAlignment = Alignment.Center
     ) {
         Column (
             modifier = Modifier
@@ -139,7 +207,7 @@ fun Page_MainMenu(navController: NavController, viewModel: MainMenuViewModel = v
                     contentAlignment = Alignment.CenterStart
                 ) {
                     IconButton(
-                        onClick = { /* Handle click */ },
+                        onClick = { showSettingsMenu.value = true },
                         modifier = Modifier
                             .background(Color.Transparent)
                             .fillMaxHeight()
@@ -160,7 +228,7 @@ fun Page_MainMenu(navController: NavController, viewModel: MainMenuViewModel = v
                     contentAlignment = Alignment.CenterEnd
                 ) {
                     IconButton(
-                        onClick = { /* Handle click */ },
+                        onClick = { showProfileMenu.value = true },
                         modifier = Modifier
                             .background(Color.Transparent)
                             .fillMaxHeight()
@@ -232,8 +300,63 @@ fun Page_MainMenu(navController: NavController, viewModel: MainMenuViewModel = v
                         .height(60.dp)
                         .weight(0.45f),
                     text = stringResource(R.string.btn_sell),
-                    onClick = { },
+                    onClick = { viewModel.moveToItemSell() },
                 )
+            }
+        }
+
+        if (showProfileMenu.value) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.3f))
+                    .blur(10.dp)
+                    .clickable { showProfileMenu.value = false }
+            )
+
+            // Slide-in from RIGHT
+            Box(modifier = Modifier.fillMaxSize()) {
+                AnimatedVisibility(
+                    visible = true,
+                    enter = slideInHorizontally(
+                        initialOffsetX = { it },
+                        animationSpec = tween(durationMillis = 300)
+                    ),
+                    exit = slideOutHorizontally(
+                        targetOffsetX = { it },
+                        animationSpec = tween(durationMillis = 300)
+                    ),
+                    modifier = Modifier.align(Alignment.CenterEnd)
+                ) {
+                    Custom_UserDashboard(onClose = { showProfileMenu.value = false })
+                }
+            }
+        }
+        if (showSettingsMenu.value) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.3f))
+                    .blur(10.dp)
+                    .clickable { showSettingsMenu.value = false }
+            )
+
+            // Slide-in from RIGHT
+            Box(modifier = Modifier.fillMaxSize()) {
+                AnimatedVisibility(
+                    visible = true,
+                    enter = slideInHorizontally(
+                        initialOffsetX = { it },
+                        animationSpec = tween(durationMillis = 300)
+                    ),
+                    exit = slideOutHorizontally(
+                        targetOffsetX = { it },
+                        animationSpec = tween(durationMillis = 300)
+                    ),
+                    modifier = Modifier.align(Alignment.CenterStart)
+                ) {
+                    Custom_SettingsDashboard(onClose = { showSettingsMenu.value = false })
+                }
             }
         }
     }
