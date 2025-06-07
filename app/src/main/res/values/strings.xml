@@ -9,6 +9,15 @@
     <string name="btn_activeTransactions">Active</string>
     <string name="btn_sell">Sell</string>
     <string name="btn_buy">Buy</string>
+    <string name="btn_changeUsername">Change username</string>
+    <string name="btn_changePassword">Change password</string>
+    <string name="btn_changePfp">Change profile picture</string>
+    <string name="btn_changeEmail">Change email</string>
+    <string name="btn_toggleLayout">Toggle layout</string>
+    <string name="btn_toggleDarkMode">Toggle dark mode</string>
+    <string name="btn_toggleTransactionHistory">Transaction history</string>
+    <string name="btn_toggleStatistics">Statistics</string>
+    <string name="btn_logout">Logout</string>
 
     <string name="err_generic">An Error has occurred.</string>
     <string name="err_missingImage">Image does not exist.</string>

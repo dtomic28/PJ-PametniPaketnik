@@ -334,7 +334,7 @@ fun Page_MainMenu(navController: NavController, viewModel: MainMenuViewModel = v
                         .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp))
                         .align(Alignment.CenterEnd)
                 ) {
-                    Custom_UserDashboard(onClose = { showProfileMenu.value = false })
+                    Custom_UserDashboard(onClose = { showProfileMenu.value = false }, navController)
                 }
             }
         }

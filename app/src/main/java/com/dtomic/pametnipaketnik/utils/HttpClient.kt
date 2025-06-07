@@ -9,7 +9,7 @@ import java.io.IOException
 object HttpClientWrapper {
 
     //private val baseUrl = "https://pp.dtomic.com/"
-    private val baseUrl = "http://192.168.1.8:3001/"
+    private val baseUrl = "http://192.168.64.14:3001/"
     private val baseApiUrl = "${baseUrl}api/"
     private val client = OkHttpClient()
     private var bearerToken: String? = null
@@ -18,6 +18,9 @@ object HttpClientWrapper {
         return baseUrl
     }
 
+    fun clearBearerToken() {
+        bearerToken = null
+    }
     fun get(
         endpoint: String,
         headers: Map<String, String> = emptyMap(),
