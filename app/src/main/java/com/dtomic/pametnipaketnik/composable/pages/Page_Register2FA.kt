@@ -1,5 +1,10 @@
 package com.dtomic.pametnipaketnik.composable.pages
 
+import Custom_CameraPreview
+import android.content.Context
+import android.util.Log
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,28 +23,48 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.dtomic.pametnipaketnik.R
 import com.dtomic.pametnipaketnik.composable.parts.Custom_Button
 import com.dtomic.pametnipaketnik.composable.parts.Custom_CameraButton
+import com.dtomic.pametnipaketnik.composable.parts.Custom_CameraPermission
 import com.dtomic.pametnipaketnik.composable.parts.Custom_ErrorBox
 import com.dtomic.pametnipaketnik.ui.theme.AppTheme
 import com.dtomic.pametnipaketnik.utils.HttpClientWrapper
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.asRequestBody
+import org.json.JSONObject
+import java.io.BufferedOutputStream
+import java.io.File
+import java.io.FileOutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 // MODEL
 class Register2FAViewModel : ViewModel() {
 
     val username = mutableStateOf("")
+    private val allCapturedImages = mutableListOf<File>()
 
     private val _numOfBatches = MutableStateFlow(0)
     val numOfBatches: StateFlow<Int> = _numOfBatches
@@ -50,20 +75,91 @@ class Register2FAViewModel : ViewModel() {
     private val _errorMessage = MutableStateFlow("Press the + button and move your head for 2 seconds while looking at the camera. Repeat 10 times!")
     val errorMessage: StateFlow<String> = _errorMessage
 
+    fun takePictureBatch(context: Context, username: String, imageCapture: ImageCapture) {
+        viewModelScope.launch {
+            repeat(10) { i ->
+                val photoFile = File.createTempFile("img_${_numOfBatches.value}_$i", ".jpg", context.cacheDir)
+                val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
+                val result = CompletableDeferred<Unit>()
 
-    fun takePictureBatch() {
-        _numOfBatches.value++
-        /*
-        TODO Tomic:
-            vsakic ku prides sm not zajem 10 slik v spannu 2 sekund (5 fps)
-            pa jih posl n backend z treniranje modela. username uporabnika
-            mas shranjen pod "username". ta funkcija se izvede usakic ku
-            uporabnik prtisne "+" button (5x)
-         */
-        if (numOfBatches.value > 4) {
-            _completeRegistration2FA.value = true
+                imageCapture.takePicture(
+                    outputOptions,
+                    ContextCompat.getMainExecutor(context),
+                    object : ImageCapture.OnImageSavedCallback {
+                        override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+                            allCapturedImages.add(photoFile)
+                            result.complete(Unit)
+                        }
+
+                        override fun onError(exception: ImageCaptureException) {
+                            result.completeExceptionally(exception)
+                        }
+                    }
+                )
+
+                delay(200L)
+                result.await()
+            }
+
+            _numOfBatches.value++
+            if (_numOfBatches.value >= 5) {
+                zipAndUploadImages(context, username)
+            }
         }
     }
+    private fun zipAndUploadImages(context: Context, username: String) {
+        val zipFile = File(context.cacheDir, "images.zip")
+
+        ZipOutputStream(BufferedOutputStream(FileOutputStream(zipFile))).use { out ->
+            allCapturedImages.forEach { file ->
+                val entry = ZipEntry(file.name)
+                out.putNextEntry(entry)
+                file.inputStream().use { it.copyTo(out) }
+                out.closeEntry()
+            }
+        }
+
+        sendZipToBackend(context, username, zipFile)
+    }
+    private fun sendZipToBackend(context: Context, username: String, zipFile: File) {
+        val uploadEndpoint = "orv/upload/$username"
+        val trainEndpoint = "orv/train/$username"
+
+        _errorMessage.value = "Uploading training images..."
+        HttpClientWrapper.postFile(
+            endpoint = uploadEndpoint,
+            file = zipFile,
+            mimeType = "application/zip",
+            callback = { success, response ->
+                if (success) {
+                    Log.d("TILEN", "Upload successful: $response")
+                    _errorMessage.value = "Images uploaded. Training model..."
+
+                    HttpClientWrapper.postJson(
+                        endpoint = trainEndpoint,
+                        jsonBody = "{}",
+                        callback = { trainSuccess, trainResponse ->
+                            if (trainSuccess) {
+                                Log.d("Train", "Training started: $trainResponse")
+                                _errorMessage.value = "Training started. Returning to login screen..."
+                                _completeRegistration2FA.value = true
+                            } else {
+                                Log.e("Train", "Training failed: $trainResponse")
+                                _errorMessage.value = "Training failed. Please try again."
+                            }
+                        }
+                    )
+                } else {
+                    Log.e("TILEN", "Upload failed: $response")
+                    _errorMessage.value = "Upload failed. Please try again."
+                }
+            }
+        )
+    }
+
+
+
+
     fun resetNavigation() {
         _completeRegistration2FA.value = false
     }
@@ -73,6 +169,8 @@ class Register2FAViewModel : ViewModel() {
 @Composable
 fun Page_Register2FA(navController: NavController, viewModel: Register2FAViewModel = viewModel(), username: String) {
     viewModel.username.value = username
+    val imageCapture = remember { mutableStateOf<ImageCapture?>(null) }
+    val context = LocalContext.current
 
     val numOfBatches by viewModel.numOfBatches.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
@@ -113,10 +211,9 @@ fun Page_Register2FA(navController: NavController, viewModel: Register2FAViewMod
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.primaryContainer,
             ) {
-                /*
-                TODO tomic:
-                    camera preview v tem okvirju
-                */
+                Custom_CameraPermission {
+                    Custom_CameraPreview(Modifier.fillMaxSize(), imageCapture)
+                }
             }
             Row( // Buttons
                 modifier = Modifier
@@ -166,8 +263,14 @@ fun Page_Register2FA(navController: NavController, viewModel: Register2FAViewMod
                     modifier = Modifier
                         .height(60.dp)
                         .weight(0.20f),
-                    onClick = { viewModel.takePictureBatch() }
+                    enabled = numOfBatches < 5,
+                    onClick = {
+                        imageCapture.value?.let {
+                            viewModel.takePictureBatch(context, username, it)
+                        }
+                    }
                 )
+
             }
         }
     }

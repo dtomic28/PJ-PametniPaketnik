@@ -81,6 +81,6 @@ dependencies {
     implementation(libs.androidx.camera.view.v131)
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
-
+    implementation(libs.coil.network.okhttp)
     implementation(libs.coil.compose)
 }

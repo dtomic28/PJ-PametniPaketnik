@@ -1,7 +1,9 @@
 package com.dtomic.pametnipaketnik.composable.pages
 
-import android.R.attr.password
-import android.util.Log
+import android.content.Context
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,17 +13,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableDoubleStateOf
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,7 +29,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -40,29 +37,24 @@ import com.dtomic.pametnipaketnik.R
 import com.dtomic.pametnipaketnik.composable.parts.Custom_Button
 import com.dtomic.pametnipaketnik.composable.parts.Custom_ErrorBox
 import com.dtomic.pametnipaketnik.composable.parts.Custom_Logo
-import com.dtomic.pametnipaketnik.composable.parts.Custom_Text
 import com.dtomic.pametnipaketnik.composable.parts.Custom_TextField
 import com.dtomic.pametnipaketnik.ui.theme.AppTheme
 import com.dtomic.pametnipaketnik.utils.HttpClientWrapper
 import com.dtomic.pametnipaketnik.utils.playToken
-import kotlinx.coroutines.Dispatchers
+import com.dtomic.pametnipaketnik.utils.uriToBase64
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.json.JSONObject
-import java.nio.file.Files.exists
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 
 
 class SellItemViewModel() : ViewModel() {
-
     val itemName = mutableStateOf("")
     val itemDescription = mutableStateOf("")
     val itemPrice = mutableStateOf("")
     val boxID = mutableStateOf("")
+    val selectedImageUri = mutableStateOf<Uri?>(null)
+
 
     private val _errorMessage = MutableStateFlow("")
     val errorMessage: StateFlow<String> = _errorMessage
@@ -73,15 +65,25 @@ class SellItemViewModel() : ViewModel() {
     private val _playToken = MutableStateFlow(false)
     val playToken: StateFlow<Boolean> = _playToken
 
-    fun sellItem() {
+    fun sellItem(context: Context) {
         viewModelScope.launch {
+            val base64Image = uriToBase64(context, selectedImageUri.value)
+            if (base64Image == null) {
+                _errorMessage.value = "Failed to convert image"
+                return@launch
+            }
+            val fullDataUri = "data:image/jpeg;base64,$base64Image"
+
             val jsonBody = JSONObject().apply {
                 put("name", itemName.value)
                 put("description", itemDescription.value)
                 put("price", itemPrice.value)
                 put("boxID", boxID.value)
-                put("image", "")
+                put("image", fullDataUri)
+                put("weight", 0f)
             }.toString()
+
+
 
             HttpClientWrapper.postJson("item/sellItem", jsonBody) { success, responseBody ->
                 if (success && responseBody != null) {
@@ -119,6 +121,11 @@ fun Page_SellItem(navController: NavController, viewModel: SellItemViewModel = v
             viewModel.resetNavigation()
         }
     }
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        viewModel.selectedImageUri.value = uri
+    }
 
     Box( // whole screen
         modifier = Modifier
@@ -154,20 +161,20 @@ fun Page_SellItem(navController: NavController, viewModel: SellItemViewModel = v
                 ) {
                     Box( // logo box
                         modifier = Modifier
-                            .weight(0.3f)
+                            .weight(0.2f)
                             .fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
                         Custom_Logo(
-                            size = 100.dp
+                            size = 80.dp
                         )
                     }
 
                     Column( // buttons column
                         modifier = Modifier
-                            .weight(0.7f)
+                            .weight(0.8f)
                             .fillMaxWidth(),
-                        verticalArrangement = Arrangement.SpaceBetween,
+                        verticalArrangement = Arrangement.SpaceEvenly,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Custom_TextField(
@@ -193,6 +200,11 @@ fun Page_SellItem(navController: NavController, viewModel: SellItemViewModel = v
                             onValueChange = { viewModel.boxID.value = it },
                             placeholderText = stringResource(R.string.txt_enterBoxId),
                             keyboardType = KeyboardType.Number
+                        )
+                        Custom_Button(
+                            modifier = Modifier.fillMaxWidth(0.9f),
+                            text = stringResource(R.string.btn_selectImg),
+                            onClick = { imagePickerLauncher.launch("image/*") }
                         )
                     }
                 }
@@ -220,7 +232,7 @@ fun Page_SellItem(navController: NavController, viewModel: SellItemViewModel = v
                 Custom_Button(
                     modifier = Modifier.height(60.dp).weight(0.45f),
                     text = stringResource(R.string.btn_sell),
-                    onClick = { viewModel.sellItem() }
+                    onClick = { viewModel.sellItem(context) }
                 )
             }
         }

@@ -1,10 +1,10 @@
 package com.dtomic.pametnipaketnik.composable.pages
 
-import android.R.attr.password
-import android.util.Base64
+import Custom_CameraPreview
+import android.content.Context
 import android.util.Log
-import android.util.Log.e
-import android.util.Log.i
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,20 +17,19 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -39,21 +38,19 @@ import androidx.navigation.compose.rememberNavController
 import com.dtomic.pametnipaketnik.R
 import com.dtomic.pametnipaketnik.composable.parts.Custom_Button
 import com.dtomic.pametnipaketnik.composable.parts.Custom_CameraButton
+import com.dtomic.pametnipaketnik.composable.parts.Custom_CameraPermission
 import com.dtomic.pametnipaketnik.composable.parts.Custom_ErrorBox
-import com.dtomic.pametnipaketnik.composable.parts.Custom_Logo
-import com.dtomic.pametnipaketnik.composable.parts.Custom_TextField
 import com.dtomic.pametnipaketnik.ui.theme.AppTheme
 import com.dtomic.pametnipaketnik.utils.HttpClientWrapper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import org.json.JSONArray
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.OkHttpClient
+import okhttp3.RequestBody.Companion.asRequestBody
 import org.json.JSONObject
 import java.io.File
-import java.nio.file.Files.exists
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 
 // MODEL
 class Login2FAViewModel : ViewModel() {
@@ -67,16 +64,51 @@ class Login2FAViewModel : ViewModel() {
     val moveToMainMenu: StateFlow<Boolean> = _moveToMainMenu
 
 
-    fun takePicture() {
-        viewModelScope.launch {
-            /*
-            TODO tomic:
-                tle dodej logic ku bo n backend poslau sliko pa verificiru.
-                če je 2FA uspesen, ta funkcija se zazene ku se prtisne "+" button
-             */
-            _moveToMainMenu.value = true
-        }
+    fun sendImageToBackend(username: String, file: File) {
+        HttpClientWrapper.postFile(
+            endpoint = "orv/predict/$username",
+            file = file,
+            callback = { success, response ->
+                if (success && response != null) {
+                    Log.d("TILEN", "Prediction result: $response")
+                    try {
+                        val json = JSONObject(response)
+                        val prediction = json.optInt("prediction", -1)
+                        if (prediction == 1) {
+                            _moveToMainMenu.value = true
+                        } else {
+                            _errorMessage.value = "2FA unsuccessful"
+                            Log.w("TILEN", "Prediction not accepted: $prediction")
+                        }
+                    } catch (e: Exception) {
+                        Log.e("TILEN", "Failed to parse response JSON: ${e.message}")
+                    }
+                } else {
+                    Log.e("TILEN", "Prediction failed: $response")
+                }
+            }
+        )
+    }
 
+
+    fun takePicture(context: Context, username: String, imageCapture: ImageCapture) {
+        val photoFile = File(context.cacheDir, "photo.jpg")
+        val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
+
+        imageCapture.takePicture(
+            outputOptions,
+            ContextCompat.getMainExecutor(context),
+            object : ImageCapture.OnImageSavedCallback {
+                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                    Log.d("TILEN", "took image")
+                    sendImageToBackend(username, photoFile)
+                }
+
+                override fun onError(exception: ImageCaptureException) {
+                    Log.e("TILEN", "Failed: ${exception.message}", exception)
+                }
+            }
+        )
     }
     fun resetNavigation() {
         _moveToMainMenu.value = false
@@ -87,6 +119,8 @@ class Login2FAViewModel : ViewModel() {
 @Composable
 fun Page_Login2FA(navController: NavController, viewModel: Login2FAViewModel = viewModel(), username: String) {
     viewModel.username.value = username
+    val imageCapture = remember { mutableStateOf<ImageCapture?>(null) }
+    val context = LocalContext.current
 
     val errorMessage by viewModel.errorMessage.collectAsState()
     val error = errorMessage.isNotEmpty()
@@ -127,10 +161,9 @@ fun Page_Login2FA(navController: NavController, viewModel: Login2FAViewModel = v
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.primaryContainer,
             ) {
-            /*
-            TODO Tomic:
-                tle dodej camera preview
-             */
+                Custom_CameraPermission {
+                    Custom_CameraPreview(Modifier.fillMaxSize(), imageCapture)
+                }
             }
             Row( // Buttons
                 modifier = Modifier
@@ -156,7 +189,11 @@ fun Page_Login2FA(navController: NavController, viewModel: Login2FAViewModel = v
                     modifier = Modifier
                         .height(60.dp)
                         .weight(0.20f),
-                    onClick = { viewModel.takePicture() }
+                    onClick = {
+                        imageCapture.value?.let {
+                            viewModel.takePicture(context, username, it)
+                        }
+                    }
                 )
             }
         }
