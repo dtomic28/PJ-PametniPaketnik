@@ -6,6 +6,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -47,17 +48,20 @@ fun Custom_CameraButton(
         pressedElevation = 2.dp,
         disabledElevation = 0.dp
     ),
-    padding: Dp = 16.dp
+    padding: Dp = 16.dp,
+    enabled: Boolean = true
 ) {
     Button(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier,
         colors = ButtonDefaults.buttonColors(
             containerColor = backgroundColor,
             contentColor = contentColor
         ),
         shape = shape,
-        elevation = elevation
+        elevation = elevation,
+        contentPadding = PaddingValues(padding)
     ) {
         Icon(
             imageVector = Icons.Filled.Add,
@@ -67,6 +71,7 @@ fun Custom_CameraButton(
         )
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable

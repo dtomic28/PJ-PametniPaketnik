@@ -53,6 +53,7 @@ import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
+import org.json.JSONObject
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -73,11 +74,6 @@ class Register2FAViewModel : ViewModel() {
 
     private val _errorMessage = MutableStateFlow("Press the + button and move your head for 2 seconds while looking at the camera. Repeat 10 times!")
     val errorMessage: StateFlow<String> = _errorMessage
-
-    private fun uploadTrainingData(username: String, files: List<File>) {
-        // TODO: Zip files or choose one image and POST with `HttpClientWrapper`.
-        // Here’s where you'd use: /api/orv/train/{username}
-    }
 
     fun takePictureBatch(context: Context, username: String, imageCapture: ImageCapture) {
         viewModelScope.launch {
@@ -129,6 +125,7 @@ class Register2FAViewModel : ViewModel() {
         val uploadEndpoint = "orv/upload/$username"
         val trainEndpoint = "orv/train/$username"
 
+        _errorMessage.value = "Uploading training images..."
         HttpClientWrapper.postFile(
             endpoint = uploadEndpoint,
             file = zipFile,
@@ -136,25 +133,31 @@ class Register2FAViewModel : ViewModel() {
             callback = { success, response ->
                 if (success) {
                     Log.d("TILEN", "Upload successful: $response")
+                    _errorMessage.value = "Images uploaded. Training model..."
 
                     HttpClientWrapper.postJson(
                         endpoint = trainEndpoint,
                         jsonBody = "{}",
                         callback = { trainSuccess, trainResponse ->
                             if (trainSuccess) {
-                                Log.d("Train", "Training triggered: $trainResponse")
+                                Log.d("Train", "Training started: $trainResponse")
+                                _errorMessage.value = "Training started. Returning to login screen..."
                                 _completeRegistration2FA.value = true
                             } else {
                                 Log.e("Train", "Training failed: $trainResponse")
+                                _errorMessage.value = "Training failed. Please try again."
                             }
                         }
                     )
                 } else {
                     Log.e("TILEN", "Upload failed: $response")
+                    _errorMessage.value = "Upload failed. Please try again."
                 }
             }
         )
     }
+
+
 
 
     fun resetNavigation() {
@@ -260,12 +263,14 @@ fun Page_Register2FA(navController: NavController, viewModel: Register2FAViewMod
                     modifier = Modifier
                         .height(60.dp)
                         .weight(0.20f),
+                    enabled = numOfBatches < 5,
                     onClick = {
                         imageCapture.value?.let {
                             viewModel.takePictureBatch(context, username, it)
                         }
                     }
                 )
+
             }
         }
     }

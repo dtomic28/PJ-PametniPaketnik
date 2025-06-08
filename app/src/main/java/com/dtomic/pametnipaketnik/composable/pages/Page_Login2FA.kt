@@ -77,6 +77,7 @@ class Login2FAViewModel : ViewModel() {
                         if (prediction == 1) {
                             _moveToMainMenu.value = true
                         } else {
+                            _errorMessage.value = "2FA unsuccessful"
                             Log.w("TILEN", "Prediction not accepted: $prediction")
                         }
                     } catch (e: Exception) {

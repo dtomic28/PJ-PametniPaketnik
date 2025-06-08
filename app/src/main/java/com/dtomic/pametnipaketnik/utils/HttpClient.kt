@@ -7,14 +7,19 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 
 object HttpClientWrapper {
-
-    private val baseUrl = "https://pp.dtomic.com/api/"
+    private val baseUrl = "https://pp.dtomic.com/"
     //private val baseUrl = "http://192.168.64.14:3001/"
     private val baseApiUrl = "${baseUrl}api/"
-    private val client = OkHttpClient()
     private var bearerToken: String? = null
+
+    val client = OkHttpClient.Builder()
+        .connectTimeout(5, TimeUnit.MINUTES)
+        .readTimeout(5, TimeUnit.MINUTES)
+        .writeTimeout(5, TimeUnit.MINUTES)
+        .build()
 
     fun getBaseUrl() : String {
         return baseUrl
@@ -63,10 +68,10 @@ object HttpClientWrapper {
         val mediaType = "application/json; charset=utf-8".toMediaType()
         val body = jsonBody.toRequestBody(mediaType)
 
-        Log.d("HttpClientWrapper POST", "URL: $baseUrl$endpoint")
+        Log.d("HttpClientWrapper POST", "URL: $baseApiUrl$endpoint")
         Log.d("POST BODY", jsonBody)
         val request = Request.Builder()
-            .url(baseUrl + endpoint)
+            .url(baseApiUrl + endpoint)
             .apply {
                 headers.forEach { (key, value) ->
                     addHeader(key, value)
@@ -105,7 +110,7 @@ object HttpClientWrapper {
             .build()
 
         val request = Request.Builder()
-            .url(baseUrl + endpoint)
+            .url(baseApiUrl + endpoint)
             .apply {
                 headers.forEach { (key, value) ->
                     addHeader(key, value)
