@@ -19,6 +19,7 @@ import com.dtomic.pametnipaketnik.composable.pages.Page_Register
 import com.dtomic.pametnipaketnik.composable.pages.Page_Register2FA
 import com.dtomic.pametnipaketnik.composable.pages.Page_SellItem
 import com.dtomic.pametnipaketnik.composable.pages.Page_Title
+import com.dtomic.pametnipaketnik.composable.pages.QRCodeScannerScreen
 import com.dtomic.pametnipaketnik.ui.theme.AppTheme
 
 class MainActivity : ComponentActivity() {
@@ -67,6 +68,16 @@ fun AppNavigation() {
         ) { backStackEntry ->
             val itemId = backStackEntry.arguments?.getString("itemId") ?: ""
             Page_BuyItem(navController, itemId = itemId)
+        }
+        composable("QRCodeScanner") {
+            QRCodeScannerScreen(
+                onBoxIdScanned = { scannedBoxId ->
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("scanned_box_id", scannedBoxId)
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }
