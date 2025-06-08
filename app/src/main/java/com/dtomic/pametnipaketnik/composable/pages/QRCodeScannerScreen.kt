@@ -28,7 +28,7 @@ import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 
 @Composable
-fun QRCodeScannerScreen() {
+fun QRCodeScannerScreen(onBoxIdScanned: (String) -> Unit) {
     val context = LocalContext.current
     var scannedBoxId by remember { mutableStateOf<String?>(null) }
     var showScanner by remember { mutableStateOf(true) }
@@ -52,8 +52,7 @@ fun QRCodeScannerScreen() {
 
     val scanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
         if (result.contents != null) {
-            scannedBoxId = result.contents
-            showScanner = false
+            onBoxIdScanned(result.contents)
         }
     }
 

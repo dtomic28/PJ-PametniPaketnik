@@ -21,6 +21,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -105,6 +106,15 @@ class SellItemViewModel() : ViewModel() {
 fun Page_SellItem(navController: NavController, viewModel: SellItemViewModel = viewModel()) {
     val errorMessage by viewModel.errorMessage.collectAsState()
     val error = errorMessage.isNotEmpty()
+
+    val boxIdStateFlow = remember { navController.currentBackStackEntry?.savedStateHandle?.getStateFlow("scanned_box_id", "") }
+    val scannedBoxId = boxIdStateFlow?.collectAsState()?.value
+    LaunchedEffect(scannedBoxId) {
+        if (!scannedBoxId.isNullOrBlank()) {
+            viewModel.boxID.value = scannedBoxId
+            navController.currentBackStackEntry?.savedStateHandle?.remove<String>("scanned_box_id")
+        }
+    }
 
     val context = LocalContext.current
     val playTokenFlag by viewModel.playToken.collectAsState()
@@ -195,11 +205,12 @@ fun Page_SellItem(navController: NavController, viewModel: SellItemViewModel = v
                             placeholderText = stringResource(R.string.txt_enterItemPrice),
                             keyboardType = KeyboardType.Number
                         )
-                        Custom_TextField(
-                            value = viewModel.boxID.value,
-                            onValueChange = { viewModel.boxID.value = it },
-                            placeholderText = stringResource(R.string.txt_enterBoxId),
-                            keyboardType = KeyboardType.Number
+                        Custom_Button(
+                            modifier = Modifier.fillMaxWidth(0.9f),
+                            text = stringResource(R.string.btn_selectBoxID),
+                            onClick = {
+                                navController.navigate("QRCodeScanner")
+                            }
                         )
                         Custom_Button(
                             modifier = Modifier.fillMaxWidth(0.9f),
