@@ -19,9 +19,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.dtomic.pametnipaketnik.R
+import com.dtomic.pametnipaketnik.utils.globalStorage
 
 @Composable
-fun Custom_SettingsDashboard(onClose: () -> Unit) {
+fun Custom_SettingsDashboard(onClose: () -> Unit, changeLayout: () -> Unit) {
     Surface(
         modifier = Modifier
             .fillMaxHeight()
@@ -36,14 +37,14 @@ fun Custom_SettingsDashboard(onClose: () -> Unit) {
         ) {
             Custom_Button(
                 text = stringResource(R.string.btn_toggleLayout),
-                onClick = {  },
+                onClick = { changeLayout() },
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
             )
             Spacer(Modifier.height(8.dp))
             Custom_Button(
                 text = stringResource(R.string.btn_toggleDarkMode),
-                onClick = {  },
+                onClick = { globalStorage.toggleTheme() },
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
             )
@@ -64,7 +65,7 @@ fun Custom_SettingsDashboard(onClose: () -> Unit) {
             Spacer(Modifier.weight(1f))
             Custom_Button(
                 text = stringResource(R.string.btn_back),
-                onClick = {  },
+                onClick = { onClose() },
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
             )
@@ -79,6 +80,6 @@ private fun Preview() {
         modifier = Modifier
             .fillMaxSize()
     ) {
-        Custom_SettingsDashboard(onClose = {  })
+        Custom_SettingsDashboard(onClose = {  }, changeLayout = {})
     }
 }

@@ -74,8 +74,21 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.layout.offset
 import com.dtomic.pametnipaketnik.composable.parts.Custom_SettingsDashboard
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.runtime.setValue
+import com.dtomic.pametnipaketnik.composable.parts.Custom_ItemCardBox
+import com.dtomic.pametnipaketnik.utils.globalStorage
+
+enum class MenuView {
+    ITEMS,
+    ACTIVE,
+    HISTORY
+}
 
 class MainMenuViewModel : ViewModel() {
+    var username = ""
     data class MenuItem(
         val id: String,
         val name: String,
@@ -93,6 +106,9 @@ class MainMenuViewModel : ViewModel() {
         }
     }
 
+    private val _currentView = MutableStateFlow(MenuView.ITEMS)
+    val currentView: StateFlow<MenuView> = _currentView
+
     private val _errorMessage = MutableStateFlow("")
     val errorMessage: StateFlow<String> = _errorMessage
 
@@ -104,6 +120,11 @@ class MainMenuViewModel : ViewModel() {
 
     fun moveToItemSell() {
         _moveToItemSell.value = true
+    }
+
+    fun toggleActiveView() {
+        val targetView = if (_currentView.value == MenuView.ACTIVE) MenuView.ITEMS else MenuView.ACTIVE
+        switchView(targetView)
     }
 
     private suspend fun loadItems(): Boolean = suspendCoroutine { cont ->
@@ -133,6 +154,76 @@ class MainMenuViewModel : ViewModel() {
             }
         }
     }
+    private suspend fun loadHistoryItems(): Boolean = suspendCoroutine { cont ->
+        HttpClientWrapper.get("transaction/historyByUsername/${username}") { success, responseBody ->
+            if (success && responseBody != null) {
+                try {
+                    val jsonArray = JSONArray(responseBody)
+                    val resultList = mutableListOf<MenuItem>()
+                    for (i in 0 until jsonArray.length()) {
+                        val jsonItem = jsonArray.getJSONObject(i)
+                        val item = MenuItem(
+                            id = jsonItem.getString("_id"),
+                            name = jsonItem.getString("name"),
+                            description = jsonItem.getString("description"),
+                            price = jsonItem.getInt("price"),
+                            imageLink = HttpClientWrapper.getBaseUrl()+jsonItem.getString("imageLink")
+                        )
+                        resultList.add(item)
+                    }
+                    _items.value = resultList
+                    cont.resume(true)
+                } catch (e: Exception) {
+                    cont.resumeWithException(e)
+                }
+            } else {
+                cont.resumeWithException(Exception("HTTP error: $responseBody"))
+            }
+        }
+    }
+    private suspend fun loadActiveItems(): Boolean = suspendCoroutine { cont ->
+        HttpClientWrapper.get("transaction/activeByUsername/${username}") { success, responseBody ->
+            if (success && responseBody != null) {
+                try {
+                    val jsonArray = JSONArray(responseBody)
+                    val resultList = mutableListOf<MenuItem>()
+                    for (i in 0 until jsonArray.length()) {
+                        val jsonItem = jsonArray.getJSONObject(i)
+                        val item = MenuItem(
+                            id = jsonItem.getString("_id"),
+                            name = jsonItem.getString("name"),
+                            description = jsonItem.getString("description"),
+                            price = jsonItem.getInt("price"),
+                            imageLink = HttpClientWrapper.getBaseUrl()+jsonItem.getString("imageLink")
+                        )
+                        resultList.add(item)
+                    }
+                    _items.value = resultList
+                    cont.resume(true)
+                } catch (e: Exception) {
+                    cont.resumeWithException(e)
+                }
+            } else {
+                cont.resumeWithException(Exception("HTTP error: $responseBody"))
+            }
+        }
+    }
+
+    fun switchView(newView: MenuView) {
+        viewModelScope.launch {
+            try {
+                when (newView) {
+                    MenuView.ITEMS -> loadItems()
+                    MenuView.ACTIVE -> loadActiveItems()
+                    MenuView.HISTORY -> loadHistoryItems()
+                }
+                _currentView.value = newView
+            } catch (e: Exception) {
+                _errorMessage.value = "Failed to load $newView"
+                Log.e("MainMenuViewModel", "Failed to load $newView", e)
+            }
+        }
+    }
 
     fun refreshItems() {
         viewModelScope.launch {
@@ -150,14 +241,17 @@ class MainMenuViewModel : ViewModel() {
 }
 
 @Composable
-fun Page_MainMenu(navController: NavController, viewModel: MainMenuViewModel = viewModel()) {
+fun Page_MainMenu(navController: NavController, viewModel: MainMenuViewModel = viewModel(), username: String) {
+    viewModel.username = username
     val showProfileMenu = remember { mutableStateOf(false) }
     val showSettingsMenu = remember { mutableStateOf(false) }
+    val currentView by viewModel.currentView.collectAsState()
 
     val errorMessage by viewModel.errorMessage.collectAsState()
     val error = errorMessage.isNotEmpty()
 
     val itemList by viewModel.items.collectAsState()
+    val isGridView by globalStorage.isGridView.collectAsState()
 
     val navTrigger by viewModel.moveToItemSell.collectAsState()
     LaunchedEffect(navTrigger) {
@@ -252,31 +346,52 @@ fun Page_MainMenu(navController: NavController, viewModel: MainMenuViewModel = v
             ) {
                 if (error) Custom_ErrorBox(errorMessage)
             }
-            Surface( // island
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
                     .weight(0.6f),
                 shadowElevation = 6.dp,
-
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.primaryContainer,
             ) {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(itemList) { item ->
-                        Custom_ItemCardRow(
-                            item = item,
-                            onClick = {
-                                navController.navigate("Page_BuyItem/${item.id}")
-                            }
-                        )
+                if (isGridView) {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(itemList) { item ->
+                            Custom_ItemCardBox(
+                                item = item,
+                                onClick = {
+                                    navController.navigate("Page_BuyItem/${item.id}")
+                                }
+                            )
+                        }
+
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(itemList) { item ->
+                            Custom_ItemCardRow(
+                                item = item,
+                                onClick = {
+                                    navController.navigate("Page_BuyItem/${item.id}")
+                                }
+                            )
+                        }
                     }
                 }
             }
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
@@ -284,12 +399,15 @@ fun Page_MainMenu(navController: NavController, viewModel: MainMenuViewModel = v
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
-                Custom_Button( // back
+                Custom_Button(
                     modifier = Modifier
                         .height(60.dp)
                         .weight(0.45f),
-                    text = stringResource(R.string.btn_activeTransactions),
-                    onClick = { },
+                    text = if (currentView == MenuView.ACTIVE)
+                        stringResource(R.string.btn_items)
+                    else
+                        stringResource(R.string.btn_activeTransactions),
+                    onClick = { viewModel.toggleActiveView() },
                     backgroundColor = MaterialTheme.colorScheme.secondary,
                     contentColor = MaterialTheme.colorScheme.onSecondary
                 )
@@ -368,7 +486,7 @@ fun Page_MainMenu(navController: NavController, viewModel: MainMenuViewModel = v
                         .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp))
                         .align(Alignment.CenterStart)
                 ) {
-                    Custom_SettingsDashboard(onClose = { showSettingsMenu.value = false })
+                    Custom_SettingsDashboard(onClose = { showSettingsMenu.value = false }, changeLayout = { globalStorage.toggleGridView() })
                 }
             }
         }
@@ -380,6 +498,6 @@ fun Page_MainMenu(navController: NavController, viewModel: MainMenuViewModel = v
 private fun Preview() {
     val navController = rememberNavController()
     AppTheme {
-        Page_MainMenu(navController)
+        Page_MainMenu(navController, username = "")
     }
 }

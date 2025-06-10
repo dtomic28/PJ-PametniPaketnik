@@ -6,6 +6,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -21,17 +25,26 @@ import com.dtomic.pametnipaketnik.composable.pages.Page_SellItem
 import com.dtomic.pametnipaketnik.composable.pages.Page_Title
 import com.dtomic.pametnipaketnik.composable.pages.QRCodeScannerScreen
 import com.dtomic.pametnipaketnik.ui.theme.AppTheme
+import com.dtomic.pametnipaketnik.utils.globalStorage
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        actionBar?.hide()
-        enableEdgeToEdge()
         setContent {
-            AppTheme {
-                AppNavigation()
+            actionBar?.hide()
+            enableEdgeToEdge()
+            setContent {
+                val isDarkTheme by globalStorage.isDarkTheme.collectAsState()
+                AppTheme(darkTheme = isDarkTheme) {
+                    AppNavigation()
+                }
             }
         }
+
     }
 }
 
@@ -61,7 +74,12 @@ fun AppNavigation() {
             val username = backStackEntry.arguments?.getString("username") ?: ""
             Page_Login2FA(navController, username = username)
         }
-        composable("MainMenuPage") {Page_MainMenu(navController)}
+        composable(
+            route = "MainMenuPage/{username}",
+            arguments = listOf(navArgument("username") { type = NavType.StringType } )
+        ) { backStackEntry ->
+            val username = backStackEntry.arguments?.getString("username") ?: ""
+            Page_MainMenu(navController, username = username)}
         composable(
             route = "Page_BuyItem/{itemId}",
             arguments = listOf(navArgument("itemId") { type = NavType.StringType })

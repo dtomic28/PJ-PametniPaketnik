@@ -129,7 +129,7 @@ fun Page_Login2FA(navController: NavController, viewModel: Login2FAViewModel = v
 
     LaunchedEffect(navTrigger) {
         if (navTrigger) {
-            navController.navigate("MainMenuPage")
+            navController.navigate("MainMenuPage/${username}")
             viewModel.resetNavigation()
         }
     }
