@@ -83,4 +83,5 @@ dependencies {
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.coil.network.okhttp)
     implementation(libs.coil.compose)
+    implementation(libs.barcode.scanning)
 }
