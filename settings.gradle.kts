@@ -20,5 +20,5 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "PametniPaketnik"
-include(":app")
+include(":app", ":TSP")
  

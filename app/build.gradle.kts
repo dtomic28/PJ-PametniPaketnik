@@ -84,4 +84,5 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     implementation(libs.coil.compose)
     implementation(libs.barcode.scanning)
+    implementation(project(":TSP"))
 }
