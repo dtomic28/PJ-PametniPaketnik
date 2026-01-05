@@ -18,7 +18,7 @@ import okhttp3.MediaType;
 
 
 public class DistanceMatrixAPI {
-    private static String API_KEY = "AIzaSyDCqMj4ivVWaoUZVlLxgLHlCN5AWbVnHV4";
+    private static String API_KEY = "";
     private long [][] distances;
     private long [][] durations;
     private static final int ORIGIN_CHUNK_SIZE = 5;
