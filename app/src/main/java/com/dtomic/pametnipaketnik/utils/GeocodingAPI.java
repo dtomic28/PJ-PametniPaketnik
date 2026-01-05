@@ -18,7 +18,7 @@ import okhttp3.Response;
 
 public class GeocodingAPI {
 
-    private static String API_KEY = "AIzaSyAH0z_aZesLdN53FOofxOxAu8km2oS_ybw";
+    private static String API_KEY = "";
     private double[] latitudes;
     private double[] longitudes;
 

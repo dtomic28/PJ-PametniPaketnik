@@ -1,5 +1,3 @@
-import org.gradle.kotlin.dsl.implementation
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -84,6 +82,7 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     implementation(libs.coil.compose)
     implementation(libs.barcode.scanning)
-
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+    implementation("com.google.maps.android:android-maps-utils:3.8.0")
     implementation(project(":TSP"))
 }
