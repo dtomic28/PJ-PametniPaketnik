@@ -118,7 +118,9 @@ fun Page_Login(navController: NavController, viewModel: LoginViewModel = viewMod
 
     LaunchedEffect(navTrigger) {
         if (navTrigger) {
-            navController.navigate("LoginPage2FA/${viewModel.username.value}")
+            navController.navigate("MainMenuPage/${viewModel.username.value}") {
+                popUpTo("TitlePage") { inclusive = false }
+            }
             // Optionally reset the trigger to prevent repeated navigation
             viewModel.resetNavigation()
         }
@@ -186,6 +188,7 @@ fun Page_Login(navController: NavController, viewModel: LoginViewModel = viewMod
                                 .height(10.dp)
                         )
                         Custom_TextField(
+                            password = true,
                             value = viewModel.password.value,
                             onValueChange = { viewModel.password.value = it },
                             placeholderText = stringResource(R.string.txt_password),

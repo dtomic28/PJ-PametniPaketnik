@@ -144,7 +144,7 @@ fun Page_Register(navController: NavController, viewModel: RegisterViewModel = v
 
     LaunchedEffect(navTrigger) {
         if (navTrigger) {
-            navController.navigate("RegisterPage2FA/${viewModel.username.value}")
+            navController.navigate("LoginPage")
             // Optionally reset the trigger to prevent repeated navigation
             viewModel.resetNavigation()
         }
@@ -222,6 +222,7 @@ fun Page_Register(navController: NavController, viewModel: RegisterViewModel = v
                                 .weight(0.333f)
                         )
                         Custom_TextField(
+                            password = true,
                             value = viewModel.password.value,
                             onValueChange = { viewModel.password.value = it },
                             placeholderText = stringResource(R.string.txt_password),
@@ -232,6 +233,7 @@ fun Page_Register(navController: NavController, viewModel: RegisterViewModel = v
                                 .weight(0.333f)
                         )
                         Custom_TextField(
+                            password = true,
                             value = viewModel.repeatPassword.value,
                             onValueChange = { viewModel.repeatPassword.value = it },
                             placeholderText = stringResource(R.string.txt_repeatPassword),

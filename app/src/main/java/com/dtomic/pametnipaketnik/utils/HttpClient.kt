@@ -10,8 +10,8 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 object HttpClientWrapper {
-    private val baseUrl = "https://pp.dtomic.com/"
-    //private val baseUrl = "http://192.168.64.14:3001/"
+    //private val baseUrl = "https://pp.dtomic.com/"
+    private val baseUrl = "http://192.168.1.45:3001/"
     private val baseApiUrl = "${baseUrl}api/"
     private var bearerToken: String? = null
 
@@ -96,7 +96,7 @@ object HttpClientWrapper {
         endpoint: String,
         file: File,
         fieldName: String = "file",
-        mimeType: String = "image/jpeg",
+        mimeType: String = "image/zip",
         headers: Map<String, String> = emptyMap(),
         callback: (success: Boolean, response: String?) -> Unit
     ) {

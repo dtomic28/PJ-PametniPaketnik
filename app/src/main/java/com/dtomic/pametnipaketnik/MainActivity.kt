@@ -17,10 +17,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.dtomic.pametnipaketnik.composable.pages.Page_BuyItem
 import com.dtomic.pametnipaketnik.composable.pages.Page_Login
-import com.dtomic.pametnipaketnik.composable.pages.Page_Login2FA
 import com.dtomic.pametnipaketnik.composable.pages.Page_MainMenu
 import com.dtomic.pametnipaketnik.composable.pages.Page_Register
-import com.dtomic.pametnipaketnik.composable.pages.Page_Register2FA
 import com.dtomic.pametnipaketnik.composable.pages.Page_SellItem
 import com.dtomic.pametnipaketnik.composable.pages.Page_Title
 import com.dtomic.pametnipaketnik.composable.pages.QRCodeScannerScreen
@@ -30,6 +28,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
+import com.dtomic.pametnipaketnik.composable.pages.Page_Login2FA
+import com.dtomic.pametnipaketnik.composable.pages.Page_Register2FA
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,20 +60,6 @@ fun AppNavigation() {
         composable("LoginPage") { Page_Login(navController) }
         composable("RegisterPage") { Page_Register(navController) }
         composable("ItemSell") { Page_SellItem(navController) }
-        composable(
-            route = "RegisterPage2FA/{username}",
-            arguments = listOf(navArgument("username") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val username = backStackEntry.arguments?.getString("username") ?: ""
-            Page_Register2FA(navController, username = username)
-    }
-        composable(
-            route = "LoginPage2FA/{username}",
-            arguments = listOf(navArgument("username") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val username = backStackEntry.arguments?.getString("username") ?: ""
-            Page_Login2FA(navController, username = username)
-        }
         composable(
             route = "MainMenuPage/{username}",
             arguments = listOf(navArgument("username") { type = NavType.StringType } )

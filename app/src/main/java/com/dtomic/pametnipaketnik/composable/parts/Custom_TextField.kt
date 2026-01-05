@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextObfuscationMode
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -14,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.dtomic.pametnipaketnik.R
@@ -26,30 +28,59 @@ fun Custom_TextField(
     modifier: Modifier = Modifier,
     placeholderText: String = stringResource(R.string.err_generic),
     singleLine: Boolean = true,
-    keyboardType: KeyboardType = KeyboardType.Text
+    keyboardType: KeyboardType = KeyboardType.Text,
+    password: Boolean = false,
 ) {
-    TextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        placeholder = { Text(placeholderText) },
-        singleLine = singleLine,
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = MaterialTheme.colorScheme.primary,
-            focusedIndicatorColor = MaterialTheme.colorScheme.onPrimary,
-            focusedTextColor = MaterialTheme.colorScheme.onPrimary,
-            focusedPlaceholderColor = MaterialTheme.colorScheme.inversePrimary,
+    if (password) {
+        TextField(
+            visualTransformation = PasswordVisualTransformation(),
+            value = value,
+            onValueChange = onValueChange,
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            placeholder = { Text(placeholderText) },
+            singleLine = singleLine,
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.primary,
+                focusedIndicatorColor = MaterialTheme.colorScheme.onPrimary,
+                focusedTextColor = MaterialTheme.colorScheme.onPrimary,
+                focusedPlaceholderColor = MaterialTheme.colorScheme.inversePrimary,
 
-            unfocusedContainerColor = MaterialTheme.colorScheme.secondary,
-            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSecondary,
-            unfocusedTextColor = MaterialTheme.colorScheme.onSecondary,
-            unfocusedPlaceholderColor = MaterialTheme.colorScheme.inversePrimary
-        ),
-        shape = RoundedCornerShape(16.dp)
-    )
+                unfocusedContainerColor = MaterialTheme.colorScheme.secondary,
+                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSecondary,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSecondary,
+                unfocusedPlaceholderColor = MaterialTheme.colorScheme.inversePrimary
+            ),
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+    else {
+        TextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            placeholder = { Text(placeholderText) },
+            singleLine = singleLine,
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.primary,
+                focusedIndicatorColor = MaterialTheme.colorScheme.onPrimary,
+                focusedTextColor = MaterialTheme.colorScheme.onPrimary,
+                focusedPlaceholderColor = MaterialTheme.colorScheme.inversePrimary,
+
+                unfocusedContainerColor = MaterialTheme.colorScheme.secondary,
+                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSecondary,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSecondary,
+                unfocusedPlaceholderColor = MaterialTheme.colorScheme.inversePrimary
+            ),
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
 }
 
 @Preview(showBackground = true)
