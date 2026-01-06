@@ -20,6 +20,8 @@
     <string name="btn_logout">Logout</string>
     <string name="btn_selectImg">Select image</string>
     <string name="btn_selectBoxID">Select box</string>
+    <string name="btn_chooseTown">Locations</string>
+    <string name="btn_runAlgorithm">Run</string>
 
     <string name="err_generic">An Error has occurred.</string>
     <string name="err_missingImage">Image does not exist.</string>
