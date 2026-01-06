@@ -1,15 +1,21 @@
 package com.dtomic.pametnipaketnik.utils
 
+import android.content.Context
 import com.dtomic.core.TSPData
 import java.io.File
 
-class PacketParcer {
+
+class PacketParcer(private val context: Context) {
+
     var lines: List<String> = listOf()
 
     fun fromCoords(indexes: Array<Int>): TSPData {
+        require(DataCache.isReady(context)) {
+            "Cache files missing. Download distances/durations/lat/lon first."
+        }
         val coords : Array<TSPData.Coord> = Array(indexes.size) { TSPData.Coord(0.0,0.0) }
-        val latLines: List<String> = File("app/src/main/java/com/dtomic/pametnipaketnik/utils/latitudes.txt").readLines()
-        val lonLines: List<String> = File("app/src/main/java/com/dtomic/pametnipaketnik/utils/longitudes.txt").readLines()
+        val latLines = DataCache.file(context, DataCache.LATITUDES).readLines()
+        val lonLines = DataCache.file(context, DataCache.LONGITUDES).readLines()
         var i = 0
         for ( index in indexes) {
             coords[i] = TSPData.Coord(
@@ -23,11 +29,14 @@ class PacketParcer {
     }
 
     fun fromDistances(indexes: Array<Int>): TSPData {
+        require(DataCache.isReady(context)) {
+            "Cache files missing. Download distances/durations/lat/lon first."
+        }
         val w = IntArray(indexes.size * indexes.size)
-        val matrix: List<List<Int>> = File("app/src/main/java/com/dtomic/pametnipaketnik/utils/distamces.txt").readLines()
-                .map { line ->
-                    line.split(" ").map { it.toInt() }
-                }
+        val matrix = DataCache.file(context, DataCache.DISTANCES).readLines()
+            .map { line ->
+            line.split(" ").map { it.toInt() }
+        }
 
         for( row in indexes){
             for( col in indexes){
@@ -41,11 +50,14 @@ class PacketParcer {
     }
 
     fun fromDuractions(indexes: Array<Int>): TSPData {
+        require(DataCache.isReady(context)) {
+            "Cache files missing. Download distances/durations/lat/lon first."
+        }
         val w = IntArray(indexes.size * indexes.size)
-        val matrix: List<List<Int>> = File("app/src/main/java/com/dtomic/pametnipaketnik/utils/durations.txt").readLines()
-            .map { line ->
-                line.split(" ").map { it.toInt() }
-            }
+
+        val matrix = DataCache.file(context, DataCache.DURATIONS).readLines().map { line ->
+            line.split(" ").map { it.toInt() }
+        }
 
         for (row in indexes) {
             for (col in indexes) {

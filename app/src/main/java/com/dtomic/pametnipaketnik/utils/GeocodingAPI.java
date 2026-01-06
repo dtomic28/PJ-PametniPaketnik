@@ -1,5 +1,6 @@
 package com.dtomic.pametnipaketnik.utils;
 
+import android.content.Context;
 import android.os.Build;
 
 import com.google.gson.JsonArray;
@@ -22,7 +23,7 @@ public class GeocodingAPI {
     private double[] latitudes;
     private double[] longitudes;
 
-    public void getCoordinates(List<String> addresses)
+    public void getCoordinates(List<String> addresses, Context context)
             throws FileNotFoundException {
 
         latitudes  = new double[addresses.size()];
@@ -60,14 +61,14 @@ public class GeocodingAPI {
             }
         }
 
-        makeTextFile();
+        makeTextFile(context);
     }
 
-    private void makeTextFile() throws FileNotFoundException {
-
-        PrintWriter latOut = new PrintWriter(new File("app/src/main/java/com/dtomic/pametnipaketnik/utils/latitudes.txt"));
-
-        PrintWriter lngOut = new PrintWriter(new File("app/src/main/java/com/dtomic/pametnipaketnik/utils/longitudes.txt"));
+    private void makeTextFile(Context context) throws FileNotFoundException {
+        File dir = new File(context.getFilesDir(), "DataCache");
+        if (!dir.exists()) dir.mkdirs();
+        PrintWriter latOut = new PrintWriter(new File(dir, "latitudes.txt"));
+        PrintWriter lngOut = new PrintWriter(new File(dir, "longitudes.txt"));
 
         for (int i = 0; i < latitudes.length; i++) {
             latOut.println(latitudes[i]);

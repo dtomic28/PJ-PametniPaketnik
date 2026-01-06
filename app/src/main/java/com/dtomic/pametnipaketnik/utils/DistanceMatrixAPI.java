@@ -1,5 +1,7 @@
 package com.dtomic.pametnipaketnik.utils;
 
+import android.content.Context;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -24,7 +26,7 @@ public class DistanceMatrixAPI {
     private static final int ORIGIN_CHUNK_SIZE = 5;
     private static final int DEST_CHUNK_SIZE   = 20;
 
-    public void getData(List<String> origins, List<String> destinations) throws FileNotFoundException {
+    public void getData(List<String> origins, List<String> destinations, Context context) throws FileNotFoundException {
 
         distances = new long[origins.size()][destinations.size()];
         durations = new long[origins.size()][destinations.size()];
@@ -59,11 +61,13 @@ public class DistanceMatrixAPI {
 
            }
        }
-       makeTextFile();
+       makeTextFile(context);
     }
 
-    public void makeTextFile() throws FileNotFoundException {
-        PrintWriter out = new PrintWriter(new File("app/src/main/java/com/dtomic/pametnipaketnik/utils/distances.txt"));
+    public void makeTextFile(Context context) throws FileNotFoundException {
+        File dir = new File(context.getFilesDir(), "DataCache");
+        if (!dir.exists()) dir.mkdirs();
+        PrintWriter out = new PrintWriter(new File(dir, "distances.txt"));
         for (int i = 0; i < distances.length; i++) {
             for (int j = 0; j < distances[i].length; j++) {
                 out.print(distances[i][j]);
@@ -75,7 +79,7 @@ public class DistanceMatrixAPI {
         }
         out.close();
 
-        PrintWriter out2 = new PrintWriter(new File("app/src/main/java/com/dtomic/pametnipaketnik/utils/durations.txt"));
+        PrintWriter out2 = new PrintWriter(new File(dir, "durations.txt"));
         for (int i = 0; i < durations.length; i++) {
             for (int j = 0; j < durations[i].length; j++) {
                 out2.print(durations[i][j]);

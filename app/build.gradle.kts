@@ -1,3 +1,14 @@
+import java.util.Properties
+
+val localProps = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+val mapsKey = localProps.getProperty("GOOGLE_API_KEY") ?: ""
+check(mapsKey.isNotBlank()) {
+    "Add GOOGLE_API_KEY=... to local.properties."
+}
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -9,8 +20,10 @@ android {
     compileSdk = 36
 
     defaultConfig {
+        manifestPlaceholders += mapOf()
+        manifestPlaceholders["GOOGLE_API_KEY"] = mapsKey
         applicationId = "com.dtomic.pametnipaketnik"
-        minSdk = 24
+        minSdk = 34
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"

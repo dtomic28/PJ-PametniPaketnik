@@ -1,5 +1,7 @@
 package com.dtomic.pametnipaketnik.composable.pages
 
+import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.drawable.Icon
 import android.util.Log
 import android.view.MenuItem
@@ -239,6 +241,7 @@ class MainMenuViewModel : ViewModel() {
     fun resetNavigation() {
         _moveToItemSell.value = false
     }
+
 }
 
 @Composable
@@ -487,7 +490,7 @@ fun Page_MainMenu(navController: NavController, viewModel: MainMenuViewModel = v
                         .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp))
                         .align(Alignment.CenterStart)
                 ) {
-                    Custom_SettingsDashboard(onClose = { showSettingsMenu.value = false }, changeLayout = { globalStorage.toggleGridView() })
+                    Custom_SettingsDashboard(onClose = { showSettingsMenu.value = false }, changeLayout = { globalStorage.toggleGridView() }, navController)
                 }
             }
         }

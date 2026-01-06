@@ -18,11 +18,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.dtomic.pametnipaketnik.R
 import com.dtomic.pametnipaketnik.utils.globalStorage
 
 @Composable
-fun Custom_SettingsDashboard(onClose: () -> Unit, changeLayout: () -> Unit) {
+fun Custom_SettingsDashboard(onClose: () -> Unit, changeLayout: () -> Unit, navController: NavController) {
     Surface(
         modifier = Modifier
             .fillMaxHeight()
@@ -57,8 +59,8 @@ fun Custom_SettingsDashboard(onClose: () -> Unit, changeLayout: () -> Unit) {
             )
             Spacer(Modifier.height(8.dp))
             Custom_Button(
-                text = stringResource(R.string.btn_toggleStatistics),
-                onClick = {  },
+                text = stringResource(R.string.btn_moveToMapPage),
+                onClick = { navController.navigate("MapPage") },
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
             )
@@ -76,10 +78,11 @@ fun Custom_SettingsDashboard(onClose: () -> Unit, changeLayout: () -> Unit) {
 @Preview
 @Composable
 private fun Preview() {
+    val navController = rememberNavController()
     Box(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        Custom_SettingsDashboard(onClose = {  }, changeLayout = {})
+        Custom_SettingsDashboard(onClose = {}, changeLayout = {}, navController)
     }
 }
