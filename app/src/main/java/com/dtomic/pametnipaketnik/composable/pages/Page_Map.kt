@@ -114,8 +114,6 @@ class MapViewModel(app: Application) : AndroidViewModel(app) {
     fun clearTowns() {
         _selectedTownIndexes.value = emptySet()
     }
-
-
 }
 
 @Composable

@@ -1,5 +1,6 @@
 package com.dtomic.pametnipaketnik.composable.pages
 
+import android.app.Application
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,7 +42,7 @@ private fun prettyTown(raw: String): String {
 @Composable
 fun Page_ChooseTown(
     navController: NavController,
-    viewModel: MapViewModel = viewModel(),
+    viewModel: MapViewModel,
 ) {
     val selected = viewModel.selectedTownIndexes.collectAsState().value
 
@@ -173,14 +174,5 @@ fun Page_ChooseTown(
                 }
             }
         }
-    }
-}
-
-@Preview
-@Composable
-private fun Preview() {
-    val navController = rememberNavController()
-    AppTheme {
-        Page_ChooseTown(navController)
     }
 }

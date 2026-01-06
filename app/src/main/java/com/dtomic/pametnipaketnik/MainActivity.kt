@@ -1,5 +1,6 @@
 package com.dtomic.pametnipaketnik
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -25,6 +26,10 @@ import com.dtomic.pametnipaketnik.composable.pages.QRCodeScannerScreen
 import com.dtomic.pametnipaketnik.ui.theme.AppTheme
 import com.dtomic.pametnipaketnik.utils.globalStorage
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.navigation
+import com.dtomic.pametnipaketnik.composable.pages.MapViewModel
 import com.dtomic.pametnipaketnik.composable.pages.Page_ChooseTown
 import com.dtomic.pametnipaketnik.composable.pages.Page_Map
 
@@ -44,6 +49,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@SuppressLint("UnrememberedGetBackStackEntry")
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
@@ -52,12 +58,21 @@ fun AppNavigation() {
         navController = navController,
         startDestination = "TitlePage"
     ) {
-        composable("ChooseTownPage") { Page_ChooseTown(navController) }
         composable("TitlePage") { Page_Title(navController) }
         composable("LoginPage") { Page_Login(navController) }
         composable("RegisterPage") { Page_Register(navController) }
         composable("ItemSell") { Page_SellItem(navController) }
-        composable("MapPage") { Page_Map(navController) }
+        composable("MapPage") {
+            val vm: MapViewModel = viewModel()
+            Page_Map(navController, vm)
+        }
+
+        composable("ChooseTownPage") {
+            val vm: MapViewModel = viewModel(
+                remember(navController) { navController.getBackStackEntry("MapPage") }
+            )
+            Page_ChooseTown(navController, vm)
+        }
         composable(
             route = "MainMenuPage/{username}",
             arguments = listOf(navArgument("username") { type = NavType.StringType } )
