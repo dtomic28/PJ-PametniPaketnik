@@ -32,36 +32,41 @@ class PacketParcer(private val context: Context) {
         require(DataCache.isReady(context)) {
             "Cache files missing. Download distances/durations/lat/lon first."
         }
-        val w = IntArray(indexes.size * indexes.size)
-        val matrix = DataCache.file(context, DataCache.DISTANCES).readLines()
-            .map { line ->
+
+        val n = indexes.size
+        val w = IntArray(n * n)
+
+        val matrix = DataCache.file(context, DataCache.DISTANCES).readLines().map { line ->
             line.split(" ").map { it.toInt() }
         }
 
-        for( row in indexes){
-            for( col in indexes){
-                w[row * indexes.size + col] = matrix[row][col]
+        for (i in 0 until n) {
+            for (j in 0 until n) {
+                val row = indexes[i]
+                val col = indexes[j]
+                w[i * n + j] = matrix[row][col]
             }
         }
 
-        return TSPData("PacketData", indexes.size, null, w)
-
-
+        return TSPData("PacketData", n, null, w)
     }
 
     fun fromDuractions(indexes: Array<Int>): TSPData {
         require(DataCache.isReady(context)) {
             "Cache files missing. Download distances/durations/lat/lon first."
         }
+        val n = indexes.size
         val w = IntArray(indexes.size * indexes.size)
 
         val matrix = DataCache.file(context, DataCache.DURATIONS).readLines().map { line ->
             line.split(" ").map { it.toInt() }
         }
 
-        for (row in indexes) {
-            for (col in indexes) {
-                w[row * indexes.size + col] = matrix[row][col]
+        for (i in 0 until n) {
+            for (j in 0 until n) {
+                val row = indexes[i]
+                val col = indexes[j]
+                w[i * n + j] = matrix[row][col]
             }
         }
 
