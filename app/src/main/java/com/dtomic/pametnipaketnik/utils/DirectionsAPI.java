@@ -1,5 +1,7 @@
 package com.dtomic.pametnipaketnik.utils;
 
+import android.content.Context;
+
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.maps.android.PolyUtil;
@@ -15,8 +17,12 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class DirectionsAPI {
+    private final String API_KEY;
 
-    private static final String API_KEY = "YOUR_API_KEY_HERE";
+    public DirectionsAPI(Context context) {
+        API_KEY = globalStorage.INSTANCE.getGoogleAPIKey(context);
+    }
+
     private static final int MAX_WAYPOINTS = 23;
 
     private final OkHttpClient client = new OkHttpClient();

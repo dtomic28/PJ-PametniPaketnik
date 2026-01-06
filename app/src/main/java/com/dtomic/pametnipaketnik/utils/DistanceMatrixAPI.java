@@ -20,7 +20,11 @@ import okhttp3.MediaType;
 
 
 public class DistanceMatrixAPI {
-    private static String API_KEY = "";
+    private final String API_KEY;
+
+    public DistanceMatrixAPI(Context context) {
+        API_KEY = globalStorage.INSTANCE.getGoogleAPIKey(context);
+    }
     private long [][] distances;
     private long [][] durations;
     private static final int ORIGIN_CHUNK_SIZE = 5;

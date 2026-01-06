@@ -35,6 +35,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -57,6 +58,7 @@ import com.google.maps.android.compose.Polyline
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.collections.toIntArray
 
@@ -80,11 +82,14 @@ class MapViewModel(app: Application) : AndroidViewModel(app) {
     private val _selectedTownIndexes = MutableStateFlow<Set<Int>>(emptySet())
     val selectedTownIndexes: StateFlow<Set<Int>> = _selectedTownIndexes
 
+    private val _routePath = MutableStateFlow<List<com.google.android.gms.maps.model.LatLng>>(emptyList())
+    val routePath: StateFlow<List<com.google.android.gms.maps.model.LatLng>> = _routePath
+
     fun setDisplayOption(option: DisplayOptions) {
         _displayOption.value = option
     }
     fun runAlgorithm() {
-        val directionsAPI = DirectionsAPI()
+        val directionsAPI = DirectionsAPI(context)
         val packetParcer = PacketParcer(context)
 
         val popSize = 100
@@ -104,6 +109,13 @@ class MapViewModel(app: Application) : AndroidViewModel(app) {
             points.add(towns[list[i]])
         }
         points.add(towns[list[0]])
+
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val path = directionsAPI.buildPath(points)
+            _routePath.value = path
+        }
+
     }
     fun toggleTown(index: Int) {
         _selectedTownIndexes.value =
@@ -119,12 +131,13 @@ class MapViewModel(app: Application) : AndroidViewModel(app) {
 @Composable
 fun Page_Map(navController: NavController, viewModel: MapViewModel = viewModel()) {
     val context = LocalContext.current
+    val path = viewModel.routePath.collectAsState().value
 
     LaunchedEffect(Unit) {
         if (!DataCache.isReady(context)) {
             withContext(Dispatchers.IO) {
-                DistanceMatrixAPI().getData(viewModel.towns, viewModel.towns, context)
-                GeocodingAPI().getCoordinates(viewModel.towns, context)
+                DistanceMatrixAPI(context).getData(viewModel.towns, viewModel.towns, context)
+                GeocodingAPI(context).getCoordinates(viewModel.towns, context)
             }
         }
     }
@@ -184,7 +197,9 @@ fun Page_Map(navController: NavController, viewModel: MapViewModel = viewModel()
                     properties = MapProperties(isMyLocationEnabled = false),
                     uiSettings = MapUiSettings(zoomControlsEnabled = false)
                 ) {
-
+                    if (path.isNotEmpty()) {
+                        Polyline(points = path)
+                    }
                 }
             }
 

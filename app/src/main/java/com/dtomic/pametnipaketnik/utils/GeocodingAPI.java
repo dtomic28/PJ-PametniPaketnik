@@ -18,8 +18,11 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class GeocodingAPI {
+    private final String API_KEY;
 
-    private static String API_KEY = "";
+    public GeocodingAPI(Context context) {
+        API_KEY = globalStorage.INSTANCE.getGoogleAPIKey(context);
+    }
     private double[] latitudes;
     private double[] longitudes;
 
