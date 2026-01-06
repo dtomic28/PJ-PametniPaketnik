@@ -1,5 +1,6 @@
 package com.dtomic.pametnipaketnik.composable.pages
 
+import android.R.attr.data
 import android.annotation.SuppressLint
 import android.app.Application
 import android.util.Log
@@ -97,7 +98,12 @@ class MapViewModel(app: Application) : AndroidViewModel(app) {
         val pm = 0.1
 
         val list = selectedTownIndexes.value.toTypedArray()
-        val data = packetParcer.fromDuractions(list)
+        val data = when (displayOption.value) {
+            DisplayOptions.Coords -> packetParcer.fromCoords(list)
+            DisplayOptions.Time -> packetParcer.fromDuractions(list)
+            DisplayOptions.Distance -> packetParcer.fromDistances(list)
+        }
+
         val maxFes = 1000 * data.dimension
         val problem = TSP(data, maxFes)
         val ga = GA(popSize, cr, pm)
@@ -152,6 +158,25 @@ fun Page_Map(navController: NavController, viewModel: MapViewModel = viewModel()
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .weight(0.7f),
+                shadowElevation = 6.dp,
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+            )
+            {
+                GoogleMap(
+                    modifier = Modifier.fillMaxSize(),
+                    properties = MapProperties(isMyLocationEnabled = false),
+                    uiSettings = MapUiSettings(zoomControlsEnabled = false)
+                ) {
+                    if (path.isNotEmpty()) {
+                        Polyline(points = path)
+                    }
+                }
+            }
             Row(
                 modifier = Modifier
                     .weight(0.1f)
@@ -183,30 +208,21 @@ fun Page_Map(navController: NavController, viewModel: MapViewModel = viewModel()
                     }
                 }
             }
-            Surface(
+            Row(
                 modifier = Modifier
-                    .fillMaxWidth(0.9f)
-                    .weight(0.7f),
-                shadowElevation = 6.dp,
-                shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.primaryContainer,
-            )
-            {
-                GoogleMap(
-                    modifier = Modifier.fillMaxSize(),
-                    properties = MapProperties(isMyLocationEnabled = false),
-                    uiSettings = MapUiSettings(zoomControlsEnabled = false)
-                ) {
-                    if (path.isNotEmpty()) {
-                        Polyline(points = path)
-                    }
-                }
+                    .weight(0.05f)
+                    .fillMaxHeight()
+                    .fillMaxWidth(0.9f),
+                horizontalArrangement = Arrangement.Absolute.Center
+            ) {
+                Text(
+                    text = "TEST"
+                )
             }
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
-                    .weight(0.2f),
+                    .weight(0.15f),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceEvenly,
             )
@@ -244,3 +260,9 @@ private fun Preview() {
         Page_Map(navController)
     }
 }
+
+/*
+TODO:
+- add whole distance
+- disable button if all conditions not met
+ */
