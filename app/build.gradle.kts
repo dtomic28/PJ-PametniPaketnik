@@ -86,4 +86,6 @@ dependencies {
     implementation(libs.android.maps.utils)
     implementation(libs.maps.compose)
     implementation(project(":TSP"))
+    implementation(libs.androidx.compose.material.icons)
+
 }
