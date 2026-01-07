@@ -91,7 +91,6 @@ fun Page_ChooseTown(
 
                 Spacer(Modifier.height(10.dp))
 
-                // List container
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()

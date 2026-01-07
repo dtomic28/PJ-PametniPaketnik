@@ -166,7 +166,7 @@ fun Page_BuyItem(navController: NavController, itemId: String) {
         }
     }
 
-    Box( // whole screen
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
@@ -184,7 +184,7 @@ fun Page_BuyItem(navController: NavController, itemId: String) {
             ) {
                 if (error) Custom_ErrorBox(errorMessage)
             }
-            Surface( // Center Island
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
                     .weight(0.6f),
@@ -193,7 +193,7 @@ fun Page_BuyItem(navController: NavController, itemId: String) {
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.primaryContainer,
             ) {
-                Column( // logo/input devision
+                Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.SpaceBetween,
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -216,7 +216,7 @@ fun Page_BuyItem(navController: NavController, itemId: String) {
                     }
 
 
-                    Column( // buttons column
+                    Column(
                         modifier = Modifier
                             .weight(0.7f)
                             .fillMaxWidth()
@@ -244,14 +244,14 @@ fun Page_BuyItem(navController: NavController, itemId: String) {
                     }
                 }
             }
-            Row( // Buttons
+            Row(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
                     .weight(0.2f),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
-                Custom_Button( // back
+                Custom_Button(
                     modifier = Modifier
                         .height(60.dp)
                         .weight(0.45f),
