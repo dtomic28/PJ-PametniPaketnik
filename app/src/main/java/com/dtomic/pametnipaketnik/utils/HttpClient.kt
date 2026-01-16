@@ -1,17 +1,22 @@
 package com.dtomic.pametnipaketnik.utils
 
 import android.util.Log
-import okhttp3.*
+import okhttp3.Call
+import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 object HttpClientWrapper {
     //private val baseUrl = "https://pp.dtomic.com/"
-    private val baseUrl = "http://192.168.1.45:3001/"
+    private val baseUrl = "http://192.168.1.8:3001/"
     private val baseApiUrl = "${baseUrl}api/"
     private var bearerToken: String? = null
 
