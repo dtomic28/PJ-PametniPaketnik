@@ -19,7 +19,7 @@ fun Page_IntroVideo(navController: NavController) {
     val context = LocalContext.current
 
     val videoUri = remember {
-        "android.resource://${context.packageName}/${com.dtomic.pametnipaketnik.R.raw.placeholder}".toUri()
+        "android.resource://${context.packageName}/${com.dtomic.pametnipaketnik.R.raw.final}".toUri()
     }
 
     val exoPlayer = remember {
