@@ -100,5 +100,7 @@ dependencies {
     implementation(libs.maps.compose)
     implementation(project(":TSP"))
     implementation(libs.androidx.compose.material.icons)
-
+    implementation("com.github.LottieFiles:dotlottie-android:0.12.7")
+    implementation("androidx.media3:media3-exoplayer:1.2.1")
+    implementation("androidx.media3:media3-ui:1.2.1")
 }
