@@ -1,5 +1,6 @@
 package com.dtomic.pametnipaketnik.utils
 
+import android.content.Context
 import android.util.Log
 import okhttp3.Call
 import okhttp3.Callback
@@ -13,6 +14,7 @@ import okhttp3.Response
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import android.net.Uri
 
 object HttpClientWrapper {
     //private val baseUrl = "https://pp.dtomic.com/"
@@ -34,6 +36,56 @@ object HttpClientWrapper {
     }
     fun setBearerToken(token: String) {
         bearerToken = token
+    }
+
+    fun postImageFromUri(
+        endpoint: String, // e.g. "images"
+        context: Context,
+        uri: Uri,
+        formFieldName: String = "image",
+        fileName: String = "upload.jpg",
+        mimeType: String = "image/jpeg",
+        headers: Map<String, String> = emptyMap(),
+        callback: (success: Boolean, response: String?) -> Unit
+    ) {
+        val bytes = try {
+            context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+        } catch (e: Exception) {
+            null
+        }
+
+        if (bytes == null) {
+            callback(false, "Failed to read image bytes")
+            return
+        }
+
+        val requestBody = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart(
+                formFieldName,
+                fileName,
+                bytes.toRequestBody(mimeType.toMediaType())
+            )
+            .build()
+
+        val request = Request.Builder()
+            .url(baseUrl + endpoint)
+            .apply {
+                headers.forEach { (k, v) -> addHeader(k, v) }
+                bearerToken?.let { addHeader("Authorization", "Bearer $it") }
+            }
+            .post(requestBody)
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                callback(false, e.message)
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                callback(response.isSuccessful, response.body?.string())
+            }
+        })
     }
 
     fun get(
