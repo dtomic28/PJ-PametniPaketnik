@@ -99,7 +99,7 @@ class MapViewModel(app: Application) : AndroidViewModel(app) {
     private val _displayOption = MutableStateFlow(DisplayOptions.Distance)
     val displayOption: StateFlow<DisplayOptions> = _displayOption
 
-    private val _selectedTownIndexes = MutableStateFlow<Set<Int>>(emptySet())
+    private val _selectedTownIndexes = MutableStateFlow(towns.indices.toSet())
     val selectedTownIndexes: StateFlow<Set<Int>> = _selectedTownIndexes
 
     private val _routePath = MutableStateFlow<List<com.google.android.gms.maps.model.LatLng>>(emptyList())

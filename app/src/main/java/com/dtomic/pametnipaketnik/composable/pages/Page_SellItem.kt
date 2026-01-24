@@ -68,35 +68,54 @@ class SellItemViewModel() : ViewModel() {
 
     fun sellItem(context: Context) {
         viewModelScope.launch {
-            val base64Image = uriToBase64(context, selectedImageUri.value)
-            if (base64Image == null) {
-                _errorMessage.value = "Failed to convert image"
+            val uri = selectedImageUri.value
+            if (uri == null) {
+                _errorMessage.value = "Please select an image"
                 return@launch
             }
-            val fullDataUri = "data:image/jpeg;base64,$base64Image"
 
-            val jsonBody = JSONObject().apply {
-                put("name", itemName.value)
-                put("description", itemDescription.value)
-                put("price", itemPrice.value)
-                put("boxID", boxID.value)
-                put("image", fullDataUri)
-                put("weight", 0f)
-            }.toString()
-
-
-
-            HttpClientWrapper.postJson("item/sellItem", jsonBody) { success, responseBody ->
-                if (success && responseBody != null) {
-                    _playToken.value = true
-                    _moveToMainMenu.value = true
+            HttpClientWrapper.postImageFromUri(
+                endpoint = "images",
+                context = context,
+                uri = uri,
+                formFieldName = "image",
+                fileName = "upload.jpg",
+                mimeType = "image/jpeg"
+            ) { uploadSuccess, uploadResponse ->
+                if (!uploadSuccess || uploadResponse.isNullOrBlank()) {
+                    _errorMessage.value = uploadResponse ?: "Failed to upload image"
+                    return@postImageFromUri
                 }
-                else {
-                    _errorMessage.value = responseBody.toString()
+
+                val imageLink = try {
+                    JSONObject(uploadResponse).getString("filePath")
+                } catch (e: Exception) {
+                    _errorMessage.value = "Invalid image upload response"
+                    return@postImageFromUri
+                }
+
+                val jsonBody = JSONObject().apply {
+                    put("name", itemName.value)
+                    put("description", itemDescription.value)
+                    put("price", itemPrice.value)
+                    put("boxID", boxID.value)
+                    put("imageLink", imageLink)
+                    put("weight", 0f)
+                }.toString()
+
+                HttpClientWrapper.postJson("item/sellItem", jsonBody) { success, responseBody ->
+                    if (success) {
+                        _playToken.value = true
+                        _moveToMainMenu.value = true
+                    } else {
+                        _errorMessage.value = responseBody ?: "Sell failed"
+                    }
                 }
             }
         }
     }
+
+
     fun resetNavigation() {
         _moveToMainMenu.value = false
     }

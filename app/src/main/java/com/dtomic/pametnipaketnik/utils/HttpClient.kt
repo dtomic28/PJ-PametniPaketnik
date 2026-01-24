@@ -1,5 +1,7 @@
 package com.dtomic.pametnipaketnik.utils
 
+import android.content.Context
+import android.net.Uri
 import android.util.Log
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
@@ -10,8 +12,7 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 object HttpClientWrapper {
-    //private val baseUrl = "https://pp.dtomic.com/"
-    private val baseUrl = "http://192.168.1.45:3001/"
+    private val baseUrl = "http://192.168.64.8:3001/"
     private val baseApiUrl = "${baseUrl}api/"
     private var bearerToken: String? = null
 
@@ -29,6 +30,56 @@ object HttpClientWrapper {
     }
     fun setBearerToken(token: String) {
         bearerToken = token
+    }
+
+    fun postImageFromUri(
+        endpoint: String,
+        context: Context,
+        uri: Uri,
+        formFieldName: String = "image",
+        fileName: String = "upload.jpg",
+        mimeType: String = "image/jpeg",
+        headers: Map<String, String> = emptyMap(),
+        callback: (success: Boolean, response: String?) -> Unit
+    ) {
+        val bytes = try {
+            context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+        } catch (e: Exception) {
+            null
+        }
+
+        if (bytes == null) {
+            callback(false, "Failed to read image bytes")
+            return
+        }
+
+        val requestBody = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart(
+                formFieldName,
+                fileName,
+                bytes.toRequestBody(mimeType.toMediaType())
+            )
+            .build()
+
+        val request = Request.Builder()
+            .url(baseUrl + endpoint)
+            .apply {
+                headers.forEach { (k, v) -> addHeader(k, v) }
+                bearerToken?.let { addHeader("Authorization", "Bearer $it") }
+            }
+            .post(requestBody)
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                callback(false, e.message)
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                callback(response.isSuccessful, response.body?.string())
+            }
+        })
     }
 
     fun get(
